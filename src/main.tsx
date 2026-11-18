@@ -1,11 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { AnalysisError, analyzeFile, analyzeStatistic } from './analysis.ts'
+import { AnalysisError, analyzeFile, analyzeInference, analyzeStatistic } from './analysis.ts'
 import type { AnalysisErrorCode, AnalysisResult } from './analysis.ts'
 import { formatNumber, messages } from './locale.ts'
 import type { Locale } from './locale.ts'
 import { commonMissingMarkers, defaultCsvOptions } from './dataset.ts'
 import type { CsvOptions, SchemaType } from './dataset.ts'
+import type { RunInference } from './inference-panel.tsx'
 import type { RunStatistic } from './statistics-panel.tsx'
 import { Results } from './results.tsx'
 import './styles.css'
@@ -63,6 +64,12 @@ function App() {
     const current = session.current
     if (!current) return Promise.reject(new AnalysisError('engine'))
     return analyzeStatistic(current.file, signal, current.options, request)
+  }
+
+  const runInference: RunInference = (request, signal) => {
+    const current = session.current
+    if (!current) return Promise.reject(new AnalysisError('engine'))
+    return analyzeInference(current.file, signal, current.options, request)
   }
 
   async function start(file: File, importOptions: CsvOptions) {
@@ -184,7 +191,7 @@ function App() {
       </div>
       {status.phase === 'error' && status.error !== 'cancelled' &&
         <p role="alert" className="notice error">{t.errors[status.error]}</p>}
-      {status.phase === 'complete' && <Results result={status.result} locale={locale} filename={fileInfo?.name ?? ''} onOverride={updateOverride} onStatistic={runStatistic} />}
+      {status.phase === 'complete' && <Results result={status.result} locale={locale} filename={fileInfo?.name ?? ''} onOverride={updateOverride} onStatistic={runStatistic} onInference={runInference} />}
     </main>
   </>
 }

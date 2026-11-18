@@ -8,6 +8,8 @@ import type { Locale } from './locale.ts'
 
 import { columnLabel } from './column-label.ts'
 import { ColumnQuality, QualityReports } from './quality-results.tsx'
+import { InferencePanel, inferenceTitle } from './inference-panel.tsx'
+import type { RunInference } from './inference-panel.tsx'
 import { StatisticsPanel, statisticsTitle } from './statistics-panel.tsx'
 import type { RunStatistic } from './statistics-panel.tsx'
 import { Preview } from './preview.tsx'
@@ -56,10 +58,11 @@ function ProfileDetails({ column, rows, locale, salary, open, onToggle }: {
   </details>
 }
 
-export function Results({ result, locale, filename, onOverride, onStatistic }: {
+export function Results({ result, locale, filename, onOverride, onStatistic, onInference }: {
   result: AnalysisResult
   locale: Locale
   filename: string
+  onInference: RunInference
   onStatistic: RunStatistic
   onOverride: (id: string, type: SchemaType | 'auto') => void
 }) {
@@ -96,6 +99,7 @@ export function Results({ result, locale, filename, onOverride, onStatistic }: {
       <a href="#dataset-overview">{t.overview}</a><a href="#dataset-preview">{t.preview}</a>
       <a href="#dataset-quality">{t.qualitySummary}</a><a href="#column-explorer">{t.explorer}</a>
       <a href="#descriptive-statistics">{statisticsTitle[locale]}</a>
+      <a href="#statistical-inference">{inferenceTitle[locale]}</a>
     </nav>
     <section id="dataset-overview" aria-labelledby="summary-title" className="panel workspace-section overview-panel">
       <div className="section-heading">
@@ -168,5 +172,6 @@ export function Results({ result, locale, filename, onOverride, onStatistic }: {
       {salary && <Rejected values={salary.rejected} locale={locale} title={t.rejected} />}
     </section>
     <StatisticsPanel columns={result.columns} locale={locale} onRun={onStatistic} />
+    <InferencePanel columns={result.columns} locale={locale} onRun={onInference} />
   </>
 }

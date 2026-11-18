@@ -73,3 +73,11 @@ export function inspectDataset(
   })
   return { rows, columns, salaryColumnId, admissibleNumbers: state.map(column => column.admissibleNumbers) }
 }
+
+export function numericObservation(raw: SourceCell, column: ColumnProfile, isMarker: (value: string) => boolean) {
+  const text = sourceText(raw).trim()
+  if (!text || isMarker(text)) return 'missing'
+  if (typeof raw !== 'string' && raw.kind === 'invalid') return 'invalid'
+  const parsed = classifySource(raw, text, column.override !== null)
+  return parsed.type === 'numeric' ? parsed.value : 'invalid'
+}

@@ -718,3 +718,127 @@ test('near-limit descriptive runs are local, bounded and release every worker', 
   expect(requests.some(request => /\/assets\/statistics-/.test(request.url))).toBe(true)
   console.log(JSON.stringify({ mode, browserName, operation: 'pearson', bytes: csv.length, records: 100000, timings }))
 })
+
+test('inference explains interval, paired and Welch results in English and Arabic', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+  await upload(page, 'salary,matched,المجموعة\n12,10,علاج\n14,8,علاج\n15,17,ضبط\n20,18,ضبط\n21,20,آخر')
+  const panel = page.getByRole('region', { name: 'Statistical inference' })
+  const method = panel.getByRole('combobox', { name: 'Inference method' })
+  const run = panel.getByRole('button', { name: 'Run inference' })
+  const status = panel.getByRole('status')
+  await expect(panel.getByRole('combobox', { name: 'Confidence level' })).toHaveValue('95')
+  await run.press('Enter')
+  await expect(panel.getByRole('heading', { name: 'Confidence interval 95%' })).toBeVisible()
+  await expect(panel.getByTestId('inference-p')).toHaveCount(0)
+  await method.selectOption('paired')
+  await run.click()
+  await expect(panel.getByTestId('inference-estimate')).toHaveText('1.8')
+  await expect(status.getByRole('row').last()).toContainText('Matched pairs5')
+  await expect(status).toContainText('Two-sided hypothesis test')
+  await expect(status).toContainText('cannot establish causation')
+  await method.selectOption('welch')
+  await expect(run).toBeDisabled()
+  await panel.getByRole('combobox', { name: 'Group A', exact: true }).selectOption('علاج')
+  await expect(panel.getByRole('combobox', { name: 'Group B', exact: true }).getByRole('option', { name: 'علاج' })).toHaveCount(0)
+  await panel.getByRole('combobox', { name: 'Group B', exact: true }).selectOption('ضبط')
+  await run.click()
+  await expect(panel.getByTestId('inference-estimate')).toHaveText('-4.5')
+  await expect(status).toContainText('Outside selected groups 1')
+  await expect(status.getByRole('row', { name: 'علاج 2 0 0' })).toBeVisible()
+  await page.getByLabel('Theme').selectOption('light')
+  await page.getByLabel('Language').selectOption('ar')
+  const arabic = page.getByRole('region', { name: 'الاستدلال الإحصائي' })
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
+  await expect(arabic.getByTestId('inference-estimate')).toContainText('٤٫٥')
+  await arabic.getByRole('combobox', { name: 'طريقة الاستدلال' }).selectOption('oneSample')
+  await arabic.getByRole('textbox', { name: 'المتوسط المفترض' }).fill('١٦٫٤')
+  await arabic.getByRole('button', { name: 'نفّذ الاستدلال' }).click()
+  await expect(arabic.getByTestId('inference-p')).toHaveAttribute('data-value', /^(0\.99|1)/)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
+
+  const json = [true, false, true, false, false, 'true'].map((group, i) => ({ value: i + 1, group }))
+  await upload(page, JSON.stringify(json), 'boolean-groups.json')
+  await arabic.getByRole('combobox', { name: 'طريقة الاستدلال' }).selectOption('welch')
+  await arabic.getByRole('combobox', { name: 'المجموعة أ' }).selectOption('true')
+  await arabic.getByRole('combobox', { name: 'المجموعة ب' }).selectOption('false')
+  await arabic.getByRole('button', { name: 'نفّذ الاستدلال' }).click()
+  await expect(arabic.getByRole('status')).toContainText('خارج المجموعتين المحددتين ١')
+})
+
+test('inference worker cancels and retries without publishing a stale result', async ({ page, context }) => {
+  await page.addInitScript(() => {
+    const NativeWorker = window.Worker
+    window.Worker = class extends NativeWorker {
+      terminate() {
+        performance.mark('askora:test:terminated')
+        super.terminate()
+      }
+    }
+  })
+  await page.goto('/')
+  await upload(page, 'measure\n12\n14\n16')
+  const panel = page.getByRole('region', { name: 'Statistical inference' })
+  const run = panel.getByRole('button', { name: 'Run inference' })
+  const closed = () => page.evaluate(() => performance.getEntriesByName('askora:test:terminated').length)
+  await expect(run).toBeEnabled()
+  const initial = await closed()
+  const parser = '**/parse.worker-*.js'
+  await context.route(parser, route => route.fulfill({ contentType: 'text/javascript', body: '' }))
+  await run.click()
+  await panel.getByRole('button', { name: 'Cancel' }).click()
+  await expect(panel.getByRole('status')).toHaveText('Analysis cancelled.')
+  await expect(run).toBeFocused()
+  expect(await closed()).toBe(initial + 1)
+  await run.click()
+  await expect(panel.getByRole('status')).toHaveText('Calculating…')
+  await context.unroute(parser)
+  await upload(page, 'measure\n30\n31\n32')
+  await expect(run).toBeEnabled()
+  await expect(panel.getByTestId('inference-estimate')).toHaveCount(0)
+  await run.click()
+  await expect(panel.getByTestId('inference-estimate')).toHaveText('31')
+  expect(await closed()).toBe(initial + 4)
+})
+
+test('near-limit paired inference stays local and retires its workers', async ({ page, context, browserName }) => {
+  const requests: { url: string; method: string; body: string | null }[] = []
+  context.on('request', req => requests.push({ url: req.url(), method: req.method(), body: req.postData() }))
+  await page.addInitScript(() => {
+    const NativeWorker = window.Worker
+    window.Worker = class extends NativeWorker {
+      terminate() {
+        performance.mark('askora:test:terminated')
+        super.terminate()
+      }
+    }
+  })
+  const token = 'Phase4BLocalOnly_' + 'x'.repeat(22)
+  const csv = Buffer.from('left,right,label\n' + `2,1,${token}\n4,1,${token}\n`.repeat(50000))
+  await page.goto('/')
+  await upload(page, csv)
+  await expect(page.getByTestId('rows')).toHaveText('100,000')
+  expect(requests.some(request => /\/assets\/inference-/.test(request.url))).toBe(false)
+  const panel = page.getByRole('region', { name: 'Statistical inference' })
+  await panel.getByRole('combobox', { name: 'Inference method' }).selectOption('paired')
+  const timings = []
+  for (let i = 0; i < 3; i++) {
+    const start = performance.now()
+    await panel.getByRole('button', { name: 'Run inference' }).click()
+    await expect(panel.getByTestId('inference-estimate')).toHaveText('2')
+    await expect(panel.getByTestId('inference-p')).toContainText('<')
+    await expect(panel.getByRole('row').last()).toContainText('Matched pairs100,000')
+    timings.push(Math.round(performance.now() - start))
+  }
+  const evidence = await page.evaluate(async () => ({
+    terminated: performance.getEntriesByName('askora:test:terminated').length,
+    storage: localStorage.length + sessionStorage.length + (await indexedDB.databases()).length + (await caches.keys()).length,
+  }))
+  expect(evidence).toEqual({ terminated: 4, storage: 0 })
+  expect(await context.cookies()).toEqual([])
+  expect(requests.filter(request => request.url.startsWith('http')).every(({ url, method, body }) =>
+    /^http:\/\/127\.0\.0\.1:4173\/(?:assets\/[^?]+)?$/.test(url) && !url.includes(token) && method === 'GET' && body === null,
+  )).toBe(true)
+  expect(requests.some(request => /\/assets\/inference-/.test(request.url))).toBe(true)
+  console.log(JSON.stringify({ mode, browserName, operation: 'paired-t', bytes: csv.length, rows: 100000, timings }))
+})

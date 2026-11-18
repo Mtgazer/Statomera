@@ -193,3 +193,16 @@ td[data-selected], tr[data-selected] > th { background: var(--selection); }
 .statistics-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
 .statistics-actions [aria-disabled='true'] { opacity: .75; cursor: wait; }
 .statistic-answer strong { margin-inline-start: .5rem; font-size: 1.4rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+.statistics-form input {
+  inline-size: 100%;
+  min-block-size: 44px;
+  padding-inline: .55rem;
+  border-radius: .45rem;
+  border: 1px solid var(--control-border);
+  font: inherit;
+  color: var(--ink);
+  background: var(--surface);
+}
+.statistics-form input[aria-invalid='true'] { border-color: var(--error); }
+.inference-counts th, .inference-counts td { overflow-wrap: anywhere; }

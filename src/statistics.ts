@@ -1,7 +1,7 @@
 import { CsvError } from './csv.ts'
-import type { ColumnProfile, Dataset, SchemaOverrides, SourceCell } from './dataset.ts'
-import { Binary64Parts, roundUnits } from './mean.ts'
-import { classifySource, inspectDataset, sourceText } from './schema.ts'
+import type { Dataset, SchemaOverrides } from './dataset.ts'
+import { Moments, roundRootUnits, roundUnits } from './mean.ts'
+import { inspectDataset, numericObservation } from './schema.ts'
 import { quantile } from './quantiles.ts'
 import { statisticMethods } from './statistics-contract.ts'
 import type { StatisticRequest, StatisticResult } from './statistics-contract.ts'
@@ -9,53 +9,6 @@ import type { StatisticRequest, StatisticResult } from './statistics-contract.ts
 const quantiles = { q1: 25, median: 50, q3: 75, p90: 90, p95: 95 } as const
 const squaredUnitsShift = 1074n
 const correlationUnitsShift = 2148n
-
-// Round sqrt(numerator / denominator) expressed in binary64's smallest units.
-// Locate the binary64 spacing first. Compare the exact squared midpoint for ties to even.
-function roundRootUnits(numerator: bigint, denominator: bigint) {
-  if (!numerator) return 0
-  const bits = (numerator / denominator).toString(2).length
-  const shift = Math.max(0, Math.floor((bits - 1) / 2) - 52)
-  const divisor = denominator << BigInt(2 * shift)
-  const squared = numerator / divisor
-  let root = 0n
-  if (squared) {
-    root = 1n << BigInt(Math.ceil(squared.toString(2).length / 2))
-    let next = (root + squared / root) / 2n
-    while (next < root) {
-      root = next
-      next = (root + squared / root) / 2n
-    }
-  }
-  const midpoint = 2n * root + 1n
-  const comparison = 4n * numerator - divisor * midpoint * midpoint
-  if (comparison > 0n || (comparison === 0n && root % 2n !== 0n)) root++
-  return Number(root) * 2 ** (shift - 1074)
-}
-
-// Sum and product accumulators are exact for the accepted binary64 observations.
-class Moments {
-  readonly parts = new Binary64Parts()
-  total = 0n
-  squares = 0n
-
-  add(value: number, square: boolean) {
-    this.total += this.parts.read(value)
-    if (square) this.squares += this.parts.significand ** 2n << (2n * this.parts.shift)
-  }
-
-  centeredSumNumerator(n: bigint) {
-    return n * this.squares - this.total ** 2n
-  }
-}
-
-function observation(raw: SourceCell, column: ColumnProfile, isMarker: (value: string) => boolean) {
-  const text = sourceText(raw).trim()
-  if (!text || isMarker(text)) return 'missing'
-  if (typeof raw !== 'string' && raw.kind === 'invalid') return 'invalid'
-  const parsed = classifySource(raw, text, column.override !== null)
-  return parsed.type === 'numeric' ? parsed.value : 'invalid'
-}
 
 export function calculateStatistic(
   dataset: Dataset,
@@ -87,8 +40,8 @@ export function calculateStatistic(
   let invalid = 0
   let missingOnly = 0
   for (const row of dataset.records()) {
-    const x = observation(row[first.index], first, isMarker)
-    const y = second ? observation(row[second.index], second, isMarker) : 0
+    const x = numericObservation(row[first.index], first, isMarker)
+    const y = second ? numericObservation(row[second.index], second, isMarker) : 0
     if (x === 'invalid' || y === 'invalid') invalid++
     else if (x === 'missing' || y === 'missing') missingOnly++
     else {

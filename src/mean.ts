@@ -42,3 +42,45 @@ export class Binary64Mean {
     return this.count ? roundUnits(this.total, BigInt(this.count)) : null
   }
 }
+
+export function integerRoot(squared: bigint): bigint {
+  if (squared === 0n) return 0n
+  let root = 1n << BigInt(Math.ceil(squared.toString(2).length / 2))
+  let next = (root + squared / root) / 2n
+  while (next < root) {
+    root = next
+    next = (root + squared / root) / 2n
+  }
+  return root
+}
+
+// Round sqrt(numerator / denominator) expressed in binary64's smallest units.
+// Locate the binary64 spacing first. Compare the exact squared midpoint for ties to even.
+export function roundRootUnits(numerator: bigint, denominator: bigint) {
+  if (!numerator) return 0
+  const bits = (numerator / denominator).toString(2).length
+  const shift = Math.max(0, Math.floor((bits - 1) / 2) - 52)
+  const divisor = denominator << BigInt(2 * shift)
+  const squared = numerator / divisor
+  let root = integerRoot(squared)
+  const midpoint = 2n * root + 1n
+  const comparison = 4n * numerator - divisor * midpoint * midpoint
+  if (comparison > 0n || (comparison === 0n && root % 2n !== 0n)) root++
+  return Number(root) * 2 ** (shift - 1074)
+}
+
+// Sum and product accumulators are exact for the accepted binary64 observations.
+export class Moments {
+  readonly parts = new Binary64Parts()
+  total = 0n
+  squares = 0n
+
+  add(value: number, square: boolean) {
+    this.total += this.parts.read(value)
+    if (square) this.squares += this.parts.significand ** 2n << (2n * this.parts.shift)
+  }
+
+  centeredSumNumerator(n: bigint) {
+    return n * this.squares - this.total ** 2n
+  }
+}

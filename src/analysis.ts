@@ -3,6 +3,7 @@ import type { InputError } from './csv.ts'
 import { defaultCsvOptions } from './dataset.ts'
 import type { CsvOptions, DatasetProfile } from './dataset.ts'
 
+import type { InferenceRequest, InferenceResult } from './inference-contract.ts'
 import type { StatisticRequest, StatisticResult } from './statistics-contract.ts'
 
 export type AnalysisErrorCode = InputError | 'read' | 'engine' | 'timeout' | 'cancelled'
@@ -18,11 +19,12 @@ export class AnalysisError extends Error {
 
 export type ParserReply =
   | { workbook: NonNullable<DatasetProfile['workbook']> }
+  | { ok: true; inference: InferenceResult }
   | { ok: true; statistic: StatisticResult }
   | { ok: true; result: AnalysisResult; reference?: { numericCsv: string; count: number } }
   | { ok: false; error: InputError | 'read' }
 
-export interface ParseRequest { file: File; options: CsvOptions; statistic?: StatisticRequest }
+export interface ParseRequest { file: File; options: CsvOptions; statistic?: StatisticRequest; inference?: InferenceRequest }
 
 export type AnalysisResult = DatasetProfile & {
   referenceSalaryMean?: number
@@ -39,12 +41,17 @@ export function analyzeStatistic(file: File, signal: AbortSignal, options: CsvOp
   return runWorker({ file, options, statistic }, signal)
 }
 
+export function analyzeInference(file: File, signal: AbortSignal, options: CsvOptions, inference: InferenceRequest) {
+  return runWorker({ file, options, inference }, signal)
+}
+
+function runWorker(request: ParseRequest & { inference: InferenceRequest }, signal: AbortSignal): Promise<InferenceResult>
 function runWorker(request: ParseRequest & { statistic: StatisticRequest }, signal: AbortSignal): Promise<StatisticResult>
 function runWorker(request: ParseRequest, signal: AbortSignal,
   onWorkbook?: (workbook: NonNullable<DatasetProfile['workbook']>) => void): Promise<AnalysisResult>
 function runWorker(request: ParseRequest, signal: AbortSignal,
   onWorkbook?: (workbook: NonNullable<DatasetProfile['workbook']>) => void,
-): Promise<AnalysisResult | StatisticResult> {
+): Promise<AnalysisResult | StatisticResult | InferenceResult> {
   return new Promise((resolve, reject) => {
     let worker: Worker | undefined
     let finished = false
@@ -68,7 +75,7 @@ function runWorker(request: ParseRequest, signal: AbortSignal,
       fail('cancelled')
     }
 
-    function succeed(result: AnalysisResult | StatisticResult) {
+    function succeed(result: AnalysisResult | StatisticResult | InferenceResult) {
       if (finished) return
       cleanup()
       resolve(result)
@@ -97,12 +104,17 @@ function runWorker(request: ParseRequest, signal: AbortSignal,
           fail(data.error)
           return
         }
+        if ('inference' in data) {
+          if (request.inference) succeed(data.inference)
+          else fail('engine')
+          return
+        }
         if ('statistic' in data) {
           if (request.statistic) succeed(data.statistic)
           else fail('engine')
           return
         }
-        if (request.statistic) {
+        if (request.statistic || request.inference) {
           fail('engine')
           return
         }
