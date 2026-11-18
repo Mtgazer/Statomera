@@ -2,7 +2,7 @@
 
 Askora is a bilingual conversational data analysis workspace in development. Users will open a dataset in their browser, inspect its quality and ask questions in English, Arabic or both. Answers will use real analytical computations and show the data and assumptions behind them.
 
-The CSV profiler opens local CSV files and shows a preview, inferred types, quality counts and numerical or categorical summaries in English and Arabic. The first public beta still targets zero project spend.
+The dataset profiler opens local CSV, flat JSON and supported XLSX files and shows a preview, inferred types, quality counts and numerical or categorical summaries in English and Arabic. The first public beta still targets zero project spend.
 
 ## Run the profiler locally
 
@@ -19,6 +19,7 @@ Open the loopback address printed by Vite and choose `tests/fixtures/salary.csv`
 
 ## Project documentation
 
+- [Phase 2C format support and verification](docs/PHASE_2C_REPORT.md)
 - [Phase 2A profiler and verification](docs/PHASE_2A_REPORT.md)
 - [Phase 1B build and deployment measurements](docs/PHASE_1B_REPORT.md)
 - [Phase 1A results and test commands](docs/PHASE_1A_REPORT.md)
