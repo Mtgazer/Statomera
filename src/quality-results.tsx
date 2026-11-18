@@ -1,3 +1,4 @@
+import { DistributionCharts } from './charts.tsx'
 import type { ColumnProfile, DatasetProfile } from './dataset.ts'
 import { columnLabel } from './column-label.ts'
 import { formatNumber } from './locale.ts'
@@ -143,7 +144,8 @@ export function ColumnQuality({ column, rows, locale }: { column: ColumnProfile;
     {findings.length > 0 && <ul className="quality-findings">{findings.map(finding =>
       <li key={finding}>{t.findings[finding]}</li>,
     )}</ul>}
-    {distribution && <>
+    {distribution && column.numeric && <>
+      <DistributionCharts numeric={column.numeric} quality={distribution} locale={locale} />
       <h3>{t.outlierMethod}</h3>
       {assessment?.status === 'assessed'
         ? <dl className="profile-statistics">

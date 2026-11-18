@@ -1,3 +1,5 @@
+import type { ScatterData } from './scatter.ts'
+
 export const statisticMethods = {
   count: 'count',
   sum: 'sum',
@@ -36,4 +38,5 @@ export interface StatisticResult extends StatisticRequest {
   invalid: number
   warnings: StatisticWarning[]
   reason: UndefinedStatistic | null
+  scatter?: ScatterData
 }

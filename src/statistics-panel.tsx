@@ -1,3 +1,4 @@
+import { ScatterChart } from './charts.tsx'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { AnalysisError } from './analysis.ts'
 import type { AnalysisErrorCode } from './analysis.ts'
@@ -186,5 +187,7 @@ export function StatisticsPanel({ columns, locale, onRun }: {
         {paired && <p className="muted">{t.pearsonHelp}</p>}
       </>}
     </div>
+    {result?.scatter && first && second && <ScatterChart data={result.scatter} total={result.valid} locale={locale}
+      labels={[columnLabel(first, locale), columnLabel(second, locale)]} />}
   </section>
 }

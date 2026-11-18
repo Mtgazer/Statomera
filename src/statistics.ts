@@ -2,6 +2,8 @@ import { CsvError } from './csv.ts'
 import type { Dataset, SchemaOverrides } from './dataset.ts'
 import { Moments, roundRootUnits, roundUnits } from './mean.ts'
 import { inspectDataset, numericObservation } from './schema.ts'
+import { ScatterAccumulator } from './scatter.ts'
+import type { Point } from './scatter.ts'
 import { quantile } from './quantiles.ts'
 import { statisticMethods } from './statistics-contract.ts'
 import type { StatisticRequest, StatisticResult } from './statistics-contract.ts'
@@ -27,6 +29,15 @@ export function calculateStatistic(
   const inputs = request.columns.map(id => columns.find(column => column.id === id)!)
   if (inputs.some(column => column.type !== 'numeric')) throw new CsvError('options')
   const [first, second] = inputs
+  const scatter = paired ? new ScatterAccumulator() : null
+  // The second scan is only used for a density plot, once the paired bounds are known.
+  function* completePairs(): Iterable<Point> {
+    for (const row of dataset.records()) {
+      const x = numericObservation(row[first.index], first, isMarker)
+      const y = numericObservation(row[second.index], second, isMarker)
+      if (typeof x === 'number' && typeof y === 'number') yield [x, y]
+    }
+  }
   const method = statisticMethods[operation]
   const firstMoments = new Moments()
   const secondMoments = new Moments()
@@ -53,6 +64,7 @@ export function calculateStatistic(
       }
       if (dispersion || paired || method === 'sum' || method === 'mean') firstMoments.add(x, dispersion || paired)
       if (paired) {
+        scatter!.add(x, y)
         secondMoments.add(y, true)
         const a = firstMoments.parts
         const b = secondMoments.parts
@@ -66,6 +78,8 @@ export function calculateStatistic(
     operation, columns: request.columns, method, valid, excluded, invalid, missingOnly,
     value: null, reason: null, warnings: excluded ? ['excluded'] : [],
   }
+
+  if (scatter) result.scatter = scatter.finish(completePairs)
 
   function finish(value: number, exactNonzero = false) {
     if (!Number.isFinite(value)) result.reason = 'numericRange'

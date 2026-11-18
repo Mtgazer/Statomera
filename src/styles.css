@@ -206,3 +206,25 @@ td[data-selected], tr[data-selected] > th { background: var(--selection); }
 }
 .statistics-form input[aria-invalid='true'] { border-color: var(--error); }
 .inference-counts th, .inference-counts td { overflow-wrap: anywhere; }
+
+.chart { min-inline-size: 0; max-inline-size: 36rem; margin: .85rem 0; }
+.chart figcaption { font-weight: 650; }
+.chart-legend { color: var(--muted); font-size: .875rem; margin-block: .25rem .45rem; }
+.chart-plot { display: block; inline-size: 100%; block-size: auto; background: var(--background); border-radius: .35rem; }
+.chart-axis { stroke: var(--control-border); fill: none; stroke-width: 1; }
+.chart-bar, .chart-box, .chart-point, .chart-density { fill: var(--accent-text); }
+.chart-bar { stroke: var(--background); stroke-width: .45; }
+.chart-box { fill: var(--raised); stroke: var(--accent-text); stroke-width: 2; }
+.chart-line { stroke: var(--accent-text); stroke-width: 2; }
+.chart-outlier { fill: var(--background); stroke: var(--accent-text); stroke-width: 2; }
+.chart-range { display: flex; justify-content: space-between; gap: .5rem; padding-inline: 3%; }
+.chart-range[data-single] { justify-content: center; }
+.chart-range bdi { min-inline-size: 0; }
+.chart-keys { display: flex; flex-wrap: wrap; gap: .4rem 1rem; margin-block: .4rem .8rem; }
+.chart-keys div { min-inline-size: 0; }
+.chart-keys dt { color: var(--muted); font-size: .875rem; }
+.chart-keys dd { margin: 0; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.chart-table { max-block-size: 18rem; }
+.chart-table th, .chart-table td { overflow-wrap: anywhere; }
+.chart-density { stroke: var(--accent-text); stroke-width: .55; }
+.chart-interval-values { max-inline-size: 36rem; }

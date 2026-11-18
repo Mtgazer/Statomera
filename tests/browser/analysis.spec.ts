@@ -313,7 +313,7 @@ test('generic profiles expose quality counts and localized numeric and categoric
     await expect(cells.nth(index)).toHaveText(text)
   }
   await amount.getByText('Details', { exact: true }).click()
-  await expect(amount.locator('dl')).toHaveText('Count5Mean22Minimum10Maximum40Median20')
+  await expect(amount.locator('dl.profile-statistics').first()).toHaveText('Count5Mean22Minimum10Maximum40Median20')
   await expect(amount.locator('.rejected').getByRole('listitem')).toHaveText('Record 4 bad')
   const group = column('group')
   await group.getByText('Details', { exact: true }).click()
@@ -325,7 +325,7 @@ test('generic profiles expose quality counts and localized numeric and categoric
 
   await page.getByLabel('Language').selectOption('ar')
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
-  await expect(page.getByRole('region', { name: 'ملفات تعريف الأعمدة' }).getByText('الوسيط', { exact: true })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'ملفات تعريف الأعمدة' }).locator('dl.profile-statistics').getByText('الوسيط', { exact: true })).toBeVisible()
   await expect(page.getByTestId('duplicate-rows')).toHaveText('١')
 })
 
@@ -361,7 +361,7 @@ test('profiles a large multi-column dataset inside the existing bounds', async (
   const row = page.getByRole('region', { name: 'Column profiles' }).getByRole('row')
     .filter({ has: page.getByRole('rowheader', { name: 'value', exact: true }) })
   await row.getByText('Details', { exact: true }).click()
-  await expect(row.locator('dl').first()).toHaveText('Count80,000Mean20Minimum10Maximum30Median20')
+  await expect(row.locator('dl.profile-statistics').first()).toHaveText('Count80,000Mean20Minimum10Maximum30Median20')
   const milliseconds = await page.evaluate(() => performance.getEntriesByName('askora:analysis').at(-1)?.duration)
   console.log(JSON.stringify({ mode, browserName, bytes: data.length, rows: 80000, columns: 4, milliseconds }))
 })
@@ -377,7 +377,7 @@ test('schema overrides reprofile the original values and reset with a new file',
   await expect(control).toHaveValue('numeric')
   const row = page.getByRole('row').filter({ has: control })
   await row.getByText('Details', { exact: true }).click()
-  await expect(row.locator('dl')).toContainText('Mean20')
+  await expect(row.locator('dl.profile-statistics').first()).toContainText('Mean20')
   await expect(row.locator('.rejected').getByRole('listitem')).toHaveText(['Record 2 $20', 'Record 4 1,20'])
   await page.getByLabel('Language').selectOption('ar')
   const arabicControl = page.getByRole('combobox', { name: /تجاوز النوع المستنتج.*measure/ })
@@ -424,7 +424,7 @@ test('JSON profiles native values, reports precision failures and reuses overrid
   const profiles = page.getByRole('region', { name: 'Column profiles' })
   const value = profiles.getByRole('row').filter({ has: page.getByRole('rowheader', { name: 'value', exact: true }) })
   await value.getByText('Details', { exact: true }).click()
-  await expect(value.locator('dl')).toContainText('Mean20')
+  await expect(value.locator('dl.profile-statistics').first()).toContainText('Mean20')
   await expect(value.getByTestId('missing-rate')).toHaveText('25%')
   await expect(value.locator('.rejected').getByRole('listitem')).toHaveText('Record 4 9007199254740993')
   const panel = page.getByRole('region', { name: 'Descriptive statistics' })
@@ -462,7 +462,7 @@ test('XLSX worksheet selection, strict cell policy and local asset loading', asy
   await expect(page.getByRole('region', { name: 'Dataset overview' }).getByText('XLSX', { exact: true })).toBeVisible()
   const amount = page.getByRole('row').filter({ has: page.getByRole('rowheader', { name: 'amount', exact: true }) })
   await amount.getByText('Details', { exact: true }).click()
-  await expect(amount.locator('dl')).toContainText('Mean14')
+  await expect(amount.locator('dl.profile-statistics').first()).toContainText('Mean14')
   const override = amount.getByRole('combobox')
   await override.selectOption('text')
   await expect(override).toHaveValue('text')
@@ -472,7 +472,7 @@ test('XLSX worksheet selection, strict cell policy and local asset loading', asy
   await expect(page.getByTestId('rows')).toHaveText('2')
   await expect(override).toHaveValue('auto')
   await amount.getByText('Details', { exact: true }).click()
-  await expect(amount.locator('dl')).toContainText('Mean50')
+  await expect(amount.locator('dl.profile-statistics').first()).toContainText('Mean50')
   await expect(amount.getByTestId('missing-rate')).toHaveText('0%')
   await page.getByLabel('Language').selectOption('ar')
   await expect(page.getByLabel('ورقة العمل')).toHaveValue('1')
@@ -652,6 +652,7 @@ test('descriptive worker cancels, retires on replacement and recovers', async ({
   const calculate = panel.getByRole('button', { name: 'Calculate' })
   await upload(page, 'left,right\n1,2\n2,4\n3,6')
   await expect(panel).toBeVisible()
+  await panel.getByLabel('Operation').selectOption('pearson')
   const initial = await closed()
   const parser = '**/parse.worker-*.js'
   await context.route(parser, route => route.fulfill({ contentType: 'text/javascript', body: '' }))
@@ -666,6 +667,7 @@ test('descriptive worker cancels, retires on replacement and recovers', async ({
   await upload(page, 'left,right\n9,4\n11,8')
   await expect(panel).toBeVisible()
   await expect(panel.getByTestId('statistic-value')).toHaveCount(0)
+  await expect(panel.getByRole('img', { name: 'Scatter plot' })).toHaveCount(0)
   expect(await closed()).toBe(initial + 3)
   await calculate.click()
   await expect(panel.getByTestId('statistic-value')).toHaveText('10')
@@ -681,6 +683,19 @@ test('near-limit descriptive runs are local, bounded and release every worker', 
       constructor(url: string | URL, options?: WorkerOptions) {
         super(url, options)
         performance.mark('askora:test:started')
+        this.addEventListener('message', event => {
+          if (!event.data.statistic?.scatter) return
+          const received = performance.now()
+          const observer = new MutationObserver(() => {
+            if (!document.querySelector('.chart-scatter svg')) return
+            observer.disconnect()
+            performance.measure('askora:test:plot-commit', { start: received, end: performance.now() })
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+              performance.measure('askora:test:plot-frame', { start: received, end: performance.now() })
+            }))
+          })
+          observer.observe(document.body, { childList: true, subtree: true })
+        })
       }
       terminate() {
         performance.mark('askora:test:terminated')
@@ -702,8 +717,22 @@ test('near-limit descriptive runs are local, bounded and release every worker', 
     await panel.getByRole('button', { name: 'Calculate' }).click()
     await expect(panel.getByTestId('statistic-value')).toHaveText('1')
     await expect(panel.getByRole('status')).toContainText('Complete pairs100,000')
+    const plot = panel.getByRole('img', { name: 'Scatter plot' })
+    await expect(plot).toBeVisible()
+    await expect(plot.locator('.chart-density')).toHaveCount(2)
     timings.push(Math.round(performance.now() - start))
   }
+  const disclosure = panel.getByText('Scatter data', { exact: true }).first()
+  await disclosure.press('Enter')
+  const grid = panel.getByRole('table', { name: 'Populated cells' })
+  await expect(grid.getByRole('row')).toHaveCount(3)
+  await expect(grid.locator('td:last-child')).toHaveText(['50,000', '50,000'])
+  const plotFrames = () => page.evaluate(() => performance.getEntriesByName('askora:test:plot-frame')
+    .map(entry => Math.round(entry.duration * 10) / 10))
+  await expect.poll(async () => (await plotFrames()).length).toBe(3)
+  const plotFrameMs = await plotFrames()
+  const plotCommitMs = await page.evaluate(() => performance.getEntriesByName('askora:test:plot-commit')
+    .map(entry => Math.round(entry.duration * 10) / 10))
   const lifecycle = await page.evaluate(async () => ({
     started: performance.getEntriesByName('askora:test:started').length,
     terminated: performance.getEntriesByName('askora:test:terminated').length,
@@ -716,7 +745,7 @@ test('near-limit descriptive runs are local, bounded and release every worker', 
       !url.includes(token) && method === 'GET' && body === null,
   )).toBe(true)
   expect(requests.some(request => /\/assets\/statistics-/.test(request.url))).toBe(true)
-  console.log(JSON.stringify({ mode, browserName, operation: 'pearson', bytes: csv.length, records: 100000, timings }))
+  console.log(JSON.stringify({ mode, browserName, operation: 'pearson', bytes: csv.length, records: 100000, timings, plotFrameMs, plotCommitMs }))
 })
 
 test('inference explains interval, paired and Welch results in English and Arabic', async ({ page }) => {
@@ -841,4 +870,45 @@ test('near-limit paired inference stays local and retires its workers', async ({
   )).toBe(true)
   expect(requests.some(request => /\/assets\/inference-/.test(request.url))).toBe(true)
   console.log(JSON.stringify({ mode, browserName, operation: 'paired-t', bytes: csv.length, rows: 100000, timings }))
+})
+
+test('charts retain verified values and accessible alternatives through RTL and file replacement', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+  await upload(page, 'salary,matched\n1,10\n2,20\n3,30\n4,40\n5,50\n6,60\n7,70\n100,80\nN/A,90\n"",100')
+  const explorer = page.getByRole('region', { name: 'Column profiles' })
+  await explorer.getByRole('button', { name: 'salary', exact: true }).press('Enter')
+  await expect(explorer.getByRole('img', { name: 'Histogram' })).toBeVisible()
+  const binTable = explorer.getByRole('table', { name: /Distribution of valid values/ })
+  await expect(binTable.locator('tbody tr').first()).toContainText('13.3757')
+  const box = explorer.getByRole('img', { name: 'Box plot' })
+  await expect(box.locator('.chart-outlier')).toHaveCount(1)
+  await expect(explorer.getByText('First quartile', { exact: true }).locator('..')).toContainText('2.75')
+  await expect(explorer.getByText('Third quartile', { exact: true }).locator('..')).toContainText('6.25')
+
+  const stats = page.getByRole('region', { name: 'Descriptive statistics' })
+  await stats.getByLabel('Operation').selectOption('pearson')
+  await stats.getByRole('button', { name: 'Calculate' }).click()
+  const plot = stats.getByRole('img', { name: 'Scatter plot' })
+  await expect(plot.locator('.chart-point')).toHaveCount(8)
+  await stats.getByText('Scatter data', { exact: true }).first().press('Enter')
+  const pairs = stats.getByRole('table', { name: 'Complete pairs' })
+  await expect(pairs.locator('tbody tr').last()).toHaveText('10080')
+
+  await upload(page, 'salary\n1\n2\n3\n4\n5')
+  await expect(plot).toHaveCount(0)
+  const inference = page.getByRole('region', { name: 'Statistical inference' })
+  await inference.getByRole('button', { name: 'Run inference' }).click()
+  const interval = inference.getByRole('img', { name: 'Confidence interval plot 95%' })
+  await expect(interval).toBeVisible()
+  const endpoints = inference.getByTestId('inference-interval').locator('bdi')
+  expect(Number(await endpoints.first().textContent())).toBeCloseTo(1.036756838522439, 9)
+  expect(Number(await endpoints.last().textContent())).toBeCloseTo(4.9632431614775605, 9)
+  expect(Number(await interval.locator('circle').getAttribute('cx'))).toBeCloseTo(200, 8)
+  await page.getByLabel('Theme').selectOption('light')
+  await page.getByLabel('Language').selectOption('ar')
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+  await expect(page.getByRole('img', { name: /مخطط فترة الثقة ٩٥/ })).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
 })

@@ -1,3 +1,4 @@
+import { IntervalChart } from './charts.tsx'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { AnalysisError } from './analysis.ts'
 import type { AnalysisErrorCode } from './analysis.ts'
@@ -118,7 +119,10 @@ function InferenceOutput({ result, locale }: { result: InferenceResult; locale: 
     {result.reason && <p>{t.reasons[result.reason]}</p>}
     {result.interval && <>
       <h3>{t.interval} <bdi>{percent}</bdi></h3>
-      <p data-testid="inference-interval"><bdi>{number(result.interval.lower)}</bdi> · <bdi>{number(result.interval.upper)}</bdi></p>
+      <p className="chart-range chart-interval-values" dir="ltr" data-testid="inference-interval">
+        <bdi>{number(result.interval.lower)}</bdi><bdi>{number(result.interval.upper)}</bdi>
+      </p>
+      <IntervalChart result={result} level={percent} locale={locale} />
       <p className="muted">{t.intervalHelp}</p>
     </>}
     {request.method === 'meanInterval' && result.degrees !== null && <p>{t.df} <bdi>{number(result.degrees)}</bdi></p>}
