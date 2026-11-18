@@ -1,4 +1,5 @@
 import type { ColumnProfile } from './dataset.ts'
+import { quantile } from './quantiles.ts'
 
 export const patternLimit = 256
 export const displayedPatterns = 8
@@ -37,13 +38,8 @@ export function describeNumbers(values: Float64Array): NumericQuality {
   if (min === max) return { bins, outliers: { status: 'constant' } }
   if (values.length < minimumSample) return { bins, outliers: { status: 'smallSample' } }
 
-  function quartile(fraction: number) {
-    const position = (values.length - 1) * fraction
-    const index = Math.floor(position)
-    return interpolate(values[index], values[index + 1], position - index)
-  }
-  const q1 = quartile(0.25)
-  const q3 = quartile(0.75)
+  const q1 = quantile(values, 25).value
+  const q3 = quantile(values, 75).value
   const iqr = q3 - q1
   if (iqr === 0) return { bins, outliers: { status: 'zeroIqr' } }
   const lower = q1 - 1.5 * iqr

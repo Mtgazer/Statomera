@@ -427,6 +427,10 @@ test('JSON profiles native values, reports precision failures and reuses overrid
   await expect(value.locator('dl')).toContainText('Mean20')
   await expect(value.getByTestId('missing-rate')).toHaveText('25%')
   await expect(value.locator('.rejected').getByRole('listitem')).toHaveText('Record 4 9007199254740993')
+  const panel = page.getByRole('region', { name: 'Descriptive statistics' })
+  await panel.getByLabel('Numerical column').selectOption({ label: 'value' })
+  await panel.getByRole('button', { name: 'Calculate' }).click()
+  await expect(panel.getByTestId('statistic-value')).toHaveText('20')
   await page.getByLabel('Language').selectOption('ar')
   const override = page.getByRole('combobox', { name: /تجاوز النوع المستنتج.*value/ })
   await override.selectOption('text')
@@ -472,6 +476,10 @@ test('XLSX worksheet selection, strict cell policy and local asset loading', asy
   await expect(amount.getByTestId('missing-rate')).toHaveText('0%')
   await page.getByLabel('Language').selectOption('ar')
   await expect(page.getByLabel('ورقة العمل')).toHaveValue('1')
+  const panel = page.getByRole('region', { name: 'الإحصاءات الوصفية' })
+  await panel.getByRole('combobox', { name: 'العمود الرقمي', exact: true }).selectOption({ label: 'amount' })
+  await panel.getByRole('button', { name: 'احسب' }).click()
+  await expect(panel.getByTestId('statistic-value')).toHaveText('٥٠')
   expect(requests.some(request => /\/assets\/xlsx-/.test(request.url))).toBe(true)
   expect(requests.every(({ method, url, data }) => method === 'GET' &&
     /^http:\/\/127\.0\.0\.1:4173\/(?:assets\/[^?]+)?$/.test(url) && data === null)).toBe(true)
@@ -580,4 +588,133 @@ test('quality diagnostics localize missingness, duplicate frequencies and numeri
   await upload(page, 'id,value\n1,3\n2,3')
   await expect(page.getByTestId('rows')).toHaveText('٢')
   await expect(page.getByTestId('duplicate-rows')).toHaveText('٠')
+})
+
+test('descriptive statistics use the active schema and show bilingual paired provenance', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+  await page.getByText('Import options', { exact: true }).click()
+  await page.getByLabel('Treat NA, N/A, NULL and NaN as missing').check()
+  await page.locator('input[type=file]').setInputFiles(
+    fileURLToPath(new URL('../fixtures/phase-4a-statistics.csv', import.meta.url)))
+  const panel = page.getByRole('region', { name: 'Descriptive statistics' })
+  const first = panel.getByRole('combobox', { name: 'Numerical column', exact: true })
+  await expect(first).toBeVisible()
+  await expect(first.getByRole('option', { name: 'س', exact: true })).toHaveCount(0)
+  await page.getByLabel(/Schema override.*س$/).selectOption('numeric')
+  await first.selectOption({ label: 'س' })
+  const operation = panel.getByLabel('Operation')
+  await operation.selectOption('sampleVariance')
+  const calculate = panel.getByRole('button', { name: 'Calculate' })
+  await calculate.focus()
+  await page.keyboard.press('Enter')
+  const value = panel.getByTestId('statistic-value')
+  await expect(value).toHaveAttribute('data-value', String(20 / 3))
+  await expect(panel.getByRole('status')).toContainText('Missing only2')
+  await operation.selectOption('pearson')
+  await panel.getByLabel('Second numerical column').selectOption({ label: 'positive' })
+  await calculate.click()
+  await expect(value).toHaveText('1')
+  await expect(panel.getByRole('status')).toContainText('Complete pairs4')
+  await expect(panel.getByRole('status')).toContainText('Excluded records3')
+  await expect(panel.getByRole('status')).toContainText('With invalid values2')
+  await expect(panel.getByText(/cannot establish causation/)).toBeVisible()
+  await panel.getByLabel('Second numerical column').selectOption({ label: 'ثابت' })
+  await calculate.click()
+  await expect(value).toHaveText('Undefined')
+
+  await page.getByLabel('Theme').selectOption('light')
+  await page.getByLabel('Language').selectOption('ar')
+  const arabic = page.getByRole('region', { name: 'الإحصاءات الوصفية' })
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+  await expect(arabic.getByTestId('statistic-value')).toHaveText('غير معرّفة')
+  await arabic.getByLabel('العمود الرقمي الثاني').selectOption({ label: 'سالب' })
+  await arabic.getByRole('button', { name: 'احسب' }).click()
+  await expect(arabic.getByTestId('statistic-value')).toHaveAttribute('data-value', '-1')
+  await expect(arabic.getByTestId('statistic-value')).toContainText('١')
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
+})
+
+test('descriptive worker cancels, retires on replacement and recovers', async ({ page, context }) => {
+  await page.addInitScript(() => {
+    const NativeWorker = window.Worker
+    window.Worker = class extends NativeWorker {
+      terminate() {
+        performance.mark('askora:test:terminated')
+        super.terminate()
+      }
+    }
+  })
+  const closed = () => page.evaluate(() => performance.getEntriesByName('askora:test:terminated').length)
+  await page.goto('/')
+  const panel = page.getByRole('region', { name: 'Descriptive statistics' })
+  const calculate = panel.getByRole('button', { name: 'Calculate' })
+  await upload(page, 'left,right\n1,2\n2,4\n3,6')
+  await expect(panel).toBeVisible()
+  const initial = await closed()
+  const parser = '**/parse.worker-*.js'
+  await context.route(parser, route => route.fulfill({ contentType: 'text/javascript', body: '' }))
+  await calculate.click()
+  await panel.getByRole('button', { name: 'Cancel' }).click()
+  await expect(panel.getByRole('status')).toHaveText('Analysis cancelled.')
+  await expect(calculate).toBeFocused()
+  expect(await closed()).toBe(initial + 1)
+  await calculate.click()
+  await expect(panel.getByRole('status')).toContainText('Calculating')
+  await context.unroute(parser)
+  await upload(page, 'left,right\n9,4\n11,8')
+  await expect(panel).toBeVisible()
+  await expect(panel.getByTestId('statistic-value')).toHaveCount(0)
+  expect(await closed()).toBe(initial + 3)
+  await calculate.click()
+  await expect(panel.getByTestId('statistic-value')).toHaveText('10')
+  expect(await closed()).toBe(initial + 4)
+})
+
+test('near-limit descriptive runs are local, bounded and release every worker', async ({ page, context, browserName }) => {
+  const requests: { url: string; method: string; body: string | null }[] = []
+  context.on('request', req => requests.push({ url: req.url(), method: req.method(), body: req.postData() }))
+  await page.addInitScript(() => {
+    const NativeWorker = window.Worker
+    window.Worker = class extends NativeWorker {
+      constructor(url: string | URL, options?: WorkerOptions) {
+        super(url, options)
+        performance.mark('askora:test:started')
+      }
+      terminate() {
+        performance.mark('askora:test:terminated')
+        super.terminate()
+      }
+    }
+  })
+  await page.goto('/')
+  const token = 'Phase4LocalOnly_' + 'x'.repeat(24)
+  const csv = Buffer.from('left,right,label\n' + `1,2,${token}\n3,6,${token}\n`.repeat(50000))
+  await upload(page, csv)
+  await expect(page.getByTestId('rows')).toHaveText('100,000')
+  expect(requests.some(request => /\/assets\/statistics-/.test(request.url))).toBe(false)
+  const panel = page.getByRole('region', { name: 'Descriptive statistics' })
+  await panel.getByLabel('Operation').selectOption('pearson')
+  const timings = []
+  for (let run = 0; run < 3; run++) {
+    const start = performance.now()
+    await panel.getByRole('button', { name: 'Calculate' }).click()
+    await expect(panel.getByTestId('statistic-value')).toHaveText('1')
+    await expect(panel.getByRole('status')).toContainText('Complete pairs100,000')
+    timings.push(Math.round(performance.now() - start))
+  }
+  const lifecycle = await page.evaluate(async () => ({
+    started: performance.getEntriesByName('askora:test:started').length,
+    terminated: performance.getEntriesByName('askora:test:terminated').length,
+    storage: localStorage.length + sessionStorage.length + (await indexedDB.databases()).length + (await caches.keys()).length,
+  }))
+  expect(lifecycle).toEqual({ started: 4, terminated: 4, storage: 0 })
+  expect(await context.cookies()).toEqual([])
+  expect(requests.filter(request => request.url.startsWith('http')).every(({ url, method, body }) =>
+    /^http:\/\/127\.0\.0\.1:4173\/(?:assets\/[^?]+)?$/.test(url) &&
+      !url.includes(token) && method === 'GET' && body === null,
+  )).toBe(true)
+  expect(requests.some(request => /\/assets\/statistics-/.test(request.url))).toBe(true)
+  console.log(JSON.stringify({ mode, browserName, operation: 'pearson', bytes: csv.length, records: 100000, timings }))
 })

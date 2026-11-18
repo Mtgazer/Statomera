@@ -1,11 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { AnalysisError, analyzeFile } from './analysis.ts'
+import { AnalysisError, analyzeFile, analyzeStatistic } from './analysis.ts'
 import type { AnalysisErrorCode, AnalysisResult } from './analysis.ts'
 import { formatNumber, messages } from './locale.ts'
 import type { Locale } from './locale.ts'
 import { commonMissingMarkers, defaultCsvOptions } from './dataset.ts'
 import type { CsvOptions, SchemaType } from './dataset.ts'
+import type { RunStatistic } from './statistics-panel.tsx'
 import { Results } from './results.tsx'
 import './styles.css'
 
@@ -56,6 +57,12 @@ function App() {
     if (type === 'auto') delete schemaOverrides[id]
     overrideFocus.current = id
     void start(current.file, { ...current.options, schemaOverrides })
+  }
+
+  const runStatistic: RunStatistic = (request, signal) => {
+    const current = session.current
+    if (!current) return Promise.reject(new AnalysisError('engine'))
+    return analyzeStatistic(current.file, signal, current.options, request)
   }
 
   async function start(file: File, importOptions: CsvOptions) {
@@ -177,7 +184,7 @@ function App() {
       </div>
       {status.phase === 'error' && status.error !== 'cancelled' &&
         <p role="alert" className="notice error">{t.errors[status.error]}</p>}
-      {status.phase === 'complete' && <Results result={status.result} locale={locale} filename={fileInfo?.name ?? ''} onOverride={updateOverride} />}
+      {status.phase === 'complete' && <Results result={status.result} locale={locale} filename={fileInfo?.name ?? ''} onOverride={updateOverride} onStatistic={runStatistic} />}
     </main>
   </>
 }

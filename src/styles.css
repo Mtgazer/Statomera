@@ -186,3 +186,10 @@ td[data-selected], tr[data-selected] > th { background: var(--selection); }
 .quality-reports table { margin-block-start: .65rem; }
 .duplicate-frequencies { max-block-size: 18rem; }
 .quality-findings { padding-inline-start: 1.2rem; }
+
+.statistics-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); gap: .75rem; align-items: end; }
+.statistics-form label { display: grid; gap: .35rem; min-inline-size: 0; }
+.statistics-form select { inline-size: 100%; }
+.statistics-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.statistics-actions [aria-disabled='true'] { opacity: .75; cursor: wait; }
+.statistic-answer strong { margin-inline-start: .5rem; font-size: 1.4rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }

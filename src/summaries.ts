@@ -1,5 +1,6 @@
 import type { FrequencySummary, NumericSummary } from './dataset.ts'
 import { Binary64Mean } from './mean.ts'
+import { quantile } from './quantiles.ts'
 
 export function summarizeNumbers(values: Float64Array): NumericSummary | null {
   if (!values.length) return null
@@ -7,14 +8,7 @@ export function summarizeNumbers(values: Float64Array): NumericSummary | null {
   for (const value of values) calculator.add(value)
   const mean = calculator.result()!
   values.sort()
-  const center = Math.floor(values.length / 2)
-  let median = values[center]
-  if (values.length % 2 === 0) {
-    const midpoint = new Binary64Mean()
-    midpoint.add(values[center - 1])
-    midpoint.add(median)
-    median = midpoint.result()!
-  }
+  const median = quantile(values, 50).value
   return { count: values.length, mean, min: values[0], max: values[values.length - 1], median }
 }
 

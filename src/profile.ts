@@ -1,22 +1,9 @@
-import { CsvError, limits } from './csv.ts'
-import { distinctLimit, schemaTypes } from './dataset.ts'
-import type { ColumnProfile, ColumnWarning, Dataset, DatasetProfile, SchemaOverrides, SourceCell } from './dataset.ts'
-import { classify, inferType } from './infer.ts'
-import type { Evidence, TypedValue } from './infer.ts'
-import { normalizedLabel } from './normalize.ts'
+import { limits } from './csv.ts'
+import { distinctLimit } from './dataset.ts'
+import type { Dataset, DatasetProfile, SchemaOverrides } from './dataset.ts'
+import { classifySource, inspectDataset, sourceText } from './schema.ts'
 import { columnFindings, describeNumbers, displayedPatterns, patternLimit } from './quality.ts'
 import { summarizeFrequencies, summarizeNumbers } from './summaries.ts'
-
-function sourceText(cell: SourceCell) {
-  return typeof cell === 'string' ? cell : cell.text
-}
-
-function classifySource(cell: SourceCell, text: string, override = false): TypedValue {
-  if (typeof cell !== 'string' && cell.kind === 'text' && !override) return { type: 'text' }
-  return classify(text)
-}
-
-const salaryNames = new Set(['salary', 'راتب', 'الراتب'])
 
 export function profileDataset(
   dataset: Dataset,
@@ -24,80 +11,32 @@ export function profileDataset(
   onSalaryNumber?: (value: number) => void,
   overrides: SchemaOverrides = {},
 ): DatasetProfile {
-  const selected = new Map(Object.entries(overrides))
-  for (const [id, type] of selected) {
-    if (!type || !schemaTypes.includes(type) || !dataset.columns.some(column => column.id === id)) {
-      throw new CsvError('options')
-    }
-  }
-  const salaryColumns = dataset.columns.filter(column => column.sourceName !== null &&
-    salaryNames.has(normalizedLabel(column.sourceName)))
-  const salaryColumnId = salaryColumns.length === 1 ? salaryColumns[0].id : null
-
-  const state = dataset.columns.map(() => ({
-    admissibleNumbers: 0,
-    evidence: { numeric: 0, boolean: 0, date: 0, text: 0 } satisfies Evidence,
-    warnings: new Set<ColumnWarning>(),
-    blank: 0,
-    markedMissing: 0,
-  }))
   const previewQuality: DatasetProfile['previewQuality'] = []
   const preview: DatasetProfile['preview'] = []
-  let rows = 0
   let duplicateRows = 0
   let duplicateGroups = 0
   const duplicateCounts = new Map<number, number>()
 
   // Keys represent entire raw rows, preserving cell boundaries and source spelling.
-  {
-    const seen = new Map<string, number>()
-    for (const row of dataset.records()) {
-      rows++
-      if (preview.length < limits.preview) preview.push(row.map(sourceText))
-      const key = JSON.stringify(row)
-      const previous = seen.get(key) ?? 0
-      if (previous) duplicateRows++
-      seen.set(key, previous + 1)
-
-      row.forEach((raw, index) => {
-        const column = state[index]
-        const value = sourceText(raw).trim()
-        if (!value) column.blank++
-        else if (isMarker(value)) column.markedMissing++
-        else if (typeof raw === 'string' || raw.kind !== 'invalid') {
-          const parsed = classifySource(raw, value)
-          const nativeKind = typeof raw === 'string' ? undefined : raw.kind
-          const evidenceType = nativeKind === 'numeric' && parsed.type === 'text' ? 'numeric' : parsed.type
-          column.evidence[evidenceType]++
-          if (parsed.type === 'numeric' || (selected.get(dataset.columns[index].id) === 'numeric' &&
-              classifySource(raw, value, true).type === 'numeric')) column.admissibleNumbers++
-          if (parsed.type === 'text' && parsed.warning) column.warnings.add(parsed.warning)
-        }
-      })
-    }
-    for (const count of seen.values()) {
-      if (count === 1) continue
-      duplicateGroups++
-      duplicateCounts.set(count, (duplicateCounts.get(count) ?? 0) + 1)
-    }
-    seen.clear()
-  }
-
-  const columns = dataset.columns.map((column, index): ColumnProfile => {
-    const { evidence, warnings, blank, markedMissing } = state[index]
-    const override = selected.get(column.id) ?? null
-    const inferredType = column.id === salaryColumnId && dataset.source !== 'structured'
-      ? 'numeric' : inferType(evidence, warnings.has('leadingZeros'))
-    const type = override ?? inferredType
-    if (Object.values(evidence).filter(count => count > 0).length > 1) warnings.add('mixed')
-    return { ...column, type, inferredType, distinct: 0, override, blank, markedMissing, invalid: 0, valid: 0, rejected: [],
-      warnings: [...warnings], numeric: null, frequency: null,
-      missingRate: rows ? (blank + markedMissing) / rows : null, distribution: null, findings: [] }
+  const seen = new Map<string, number>()
+  const { rows, columns, salaryColumnId, admissibleNumbers } = inspectDataset(dataset, isMarker, overrides, row => {
+    if (preview.length < limits.preview) preview.push(row.map(sourceText))
+    const key = JSON.stringify(row)
+    const previous = seen.get(key) ?? 0
+    if (previous) duplicateRows++
+    seen.set(key, previous + 1)
   })
+  for (const count of seen.values()) {
+    if (count === 1) continue
+    duplicateGroups++
+    duplicateCounts.set(count, (duplicateCounts.get(count) ?? 0) + 1)
+  }
+  seen.clear()
+
   // The first pass already counted every admissible numeric value. Pack only those
   // values for the exact median and avoid dynamic array capacity and boxing.
   const numbers = columns.map((column, index) => column.type === 'numeric'
-    ? new Float64Array(state[index].admissibleNumbers) : null)
+    ? new Float64Array(admissibleNumbers[index]) : null)
   const frequencies: (Map<string, number> | null)[] = columns.map(() => new Map())
 
   const patterns = new Map<number, number>()
