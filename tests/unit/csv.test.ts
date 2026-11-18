@@ -70,7 +70,7 @@ test('rejects empty, malformed and inconsistent records and missing or duplicate
 })
 
 test('checks resource caps and bounds preview and diagnostics', () => {
-  rejects(() => validateFile('example.xlsx', 5), 'fileType')
+  rejects(() => validateFile('example.txt', 5), 'fileType')
   rejects(() => validateFile('example.csv', 0), 'empty')
   rejects(() => validateFile('example.csv', limits.bytes + 1), 'fileSize')
   rejects(() => decodeCsv(Uint8Array.of(0xff).buffer), 'encoding')

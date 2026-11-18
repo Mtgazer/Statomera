@@ -15,6 +15,7 @@ export class AnalysisError extends Error {
 }
 
 export type ParserReply =
+  | { workbook: NonNullable<DatasetProfile['workbook']> }
   | { ok: true; result: AnalysisResult; reference?: { numericCsv: string; count: number } }
   | { ok: false; error: InputError | 'read' }
 
@@ -25,7 +26,9 @@ export type AnalysisResult = DatasetProfile & {
   timings: { parseMs: number; engineMs: number; queryMs: number }
 }
 
-export function analyzeFile(file: File, signal: AbortSignal, options = defaultCsvOptions): Promise<AnalysisResult> {
+export function analyzeFile(file: File, signal: AbortSignal, options = defaultCsvOptions,
+  onWorkbook?: (workbook: NonNullable<DatasetProfile['workbook']>) => void,
+): Promise<AnalysisResult> {
   return new Promise((resolve, reject) => {
     let worker: Worker | undefined
     let finished = false
@@ -68,6 +71,10 @@ export function analyzeFile(file: File, signal: AbortSignal, options = defaultCs
       worker.onmessageerror = () => fail('read')
       worker.onmessage = async ({ data }: MessageEvent<ParserReply>) => {
         if (finished) return
+        if ('workbook' in data) {
+          onWorkbook?.(data.workbook)
+          return
+        }
         worker?.terminate()
         worker = undefined
         if (!data.ok) {

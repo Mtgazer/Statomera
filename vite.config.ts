@@ -25,6 +25,7 @@ export default defineConfig(({ mode }) => ({
       { find: /^@duckdb\/duckdb-wasm\/dist\/duckdb-browser-mvp\.worker\.js(?=\?|$)/, replacement: '@duckdb/duckdb-wasm/dist/duckdb-browser-eh.worker.js' },
     ] : [],
   },
+  worker: { format: 'es' },
   base: './',
   plugins: [{
     name: 'askora-static-security-headers',

@@ -19,6 +19,7 @@ function App() {
   const [locale, setLocale] = useState<Locale>('en')
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
   const [status, setStatus] = useState<Status>({ phase: 'idle' })
+  const [workbook, setWorkbook] = useState<AnalysisResult['workbook']>()
   const [options, setOptions] = useState(defaultCsvOptions)
   const [fileInfo, setFileInfo] = useState<{ name: string; size: number }>()
   const job = useRef<AbortController | null>(null)
@@ -67,7 +68,9 @@ function App() {
     performance.clearMeasures('askora:analysis')
     const startTime = performance.now()
     try {
-      const result = await analyzeFile(file, controller.signal, importOptions)
+      const result = await analyzeFile(file, controller.signal, importOptions, value => {
+        if (job.current === controller) setWorkbook(value)
+      })
       if (job.current !== controller) return
       performance.measure('askora:analysis', {
         start: startTime, end: performance.now(), detail: result.timings,
@@ -107,11 +110,12 @@ function App() {
           <p id="upload-guidance" className="muted">{t.guidance}</p>
         </div>
         <div className="actions">
-          <input ref={picker} type="file" accept=".csv,text/csv" hidden onChange={event => {
+          <input ref={picker} type="file" accept=".csv,.json,.xlsx" hidden onChange={event => {
             const selected = event.currentTarget.files?.[0]
             event.currentTarget.value = ''
             if (selected) {
               overrideFocus.current = null
+              setWorkbook(undefined)
               void start(selected, options)
             }
           }} />
@@ -150,6 +154,18 @@ function App() {
         <div className="file-status">
           {fileInfo && <p className="file-info"><bdi>{fileInfo.name}</bdi>
             <bdi className="muted">{formatNumber(fileInfo.size, locale)} {t.bytes}</bdi></p>}
+          {workbook && <label className="worksheet-select">{t.worksheet}
+            <select disabled={status.phase === 'busy'} value={workbook.selected} onChange={event => {
+              const current = session.current
+              if (current) {
+                overrideFocus.current = null
+                void start(current.file, { ...current.options, worksheet: Number(event.currentTarget.value),
+                  schemaOverrides: undefined })
+              }
+            }}>
+              {workbook.names.map((name, index) => <option key={index} value={index}>{name}</option>)}
+            </select>
+          </label>}
           <p className="muted">{t.privacy}</p>
         </div>
       </section>

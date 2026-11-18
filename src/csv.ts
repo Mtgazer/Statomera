@@ -14,7 +14,7 @@ export const limits = {
 
 export const inputErrors = [
   'fileType', 'empty', 'fileSize', 'encoding', 'structure', 'rowWidth',
-  'rowLimit', 'columnLimit', 'fieldLimit', 'cellLimit', 'headers', 'delimiter', 'options',
+  'rowLimit', 'columnLimit', 'fieldLimit', 'cellLimit', 'headers', 'delimiter', 'options', 'jsonShape', 'xlsxShape', 'worksheet', 'expandedLimit', 'parquetDeferred',
 ] as const
 
 export type InputError = typeof inputErrors[number]
@@ -29,9 +29,12 @@ export class CsvError extends Error {
 }
 
 export function validateFile(name: string, size: number) {
-  if (!name.toLowerCase().endsWith('.csv')) throw new CsvError('fileType')
+  const format = name.toLowerCase().split('.').at(-1)
+  if (format === 'parquet' && name.includes('.')) throw new CsvError('parquetDeferred')
+  if (!name.includes('.') || (format !== 'csv' && format !== 'json' && format !== 'xlsx')) throw new CsvError('fileType')
   if (size === 0) throw new CsvError('empty')
   if (size > limits.bytes) throw new CsvError('fileSize')
+  return format
 }
 
 export function decodeCsv(bytes: ArrayBuffer): string {

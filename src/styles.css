@@ -94,3 +94,5 @@ summary { cursor: pointer; }
 .profile-statistics dd { margin: 0; font-variant-numeric: tabular-nums; }
 
 .schema-type { max-inline-size: 10rem; }
+
+.worksheet-select { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-block: .5rem; }

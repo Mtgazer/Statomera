@@ -19,7 +19,7 @@ test('local picker flow, identical bilingual results and theme switch on a narro
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/')
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
-  await page.getByRole('button', { name: 'Choose CSV' }).focus()
+  await page.getByRole('button', { name: 'Choose file' }).focus()
   const selection = page.waitForEvent('filechooser')
   await page.keyboard.press('Enter')
   await (await selection).setFiles(fixture)
@@ -56,7 +56,7 @@ test('malformed, empty, invalid-encoding and over-limit inputs recover', async (
     ['salary,salary\n1,2', /unique/],
     [Buffer.from([0xff]), /UTF-8/],
     [Buffer.alloc(5 * 1024 * 1024 + 1), /5 MiB limit/],
-    ['salary\n1', /\.csv extension/, 'sample.txt'],
+    ['salary\n1', /Choose a CSV/, 'sample.txt'],
   ] as const) {
     await upload(page, contents, name)
     await expect(page.getByRole('alert')).toHaveText(message)
@@ -113,7 +113,7 @@ test('cancel terminates active work and a replaced file takes precedence', async
   await page.locator('input[type=file]').setInputFiles(fixture)
   await page.getByRole('button', { name: 'Cancel' }).click()
   await expect(page.getByRole('status')).toHaveText('Analysis cancelled.')
-  await expect(page.getByRole('button', { name: 'Choose CSV' })).toBeFocused()
+  await expect(page.getByRole('button', { name: 'Choose file' })).toBeFocused()
   expect(await page.evaluate(() => performance.getEntriesByName('askora:test:terminated').length)).toBe(1)
   await expect(page.getByTestId('mean')).toHaveCount(0)
   await upload(page, 'salary\n100')
@@ -404,4 +404,92 @@ test('cancelled or failed schema work hides stale results and can be retried', a
   await page.getByRole('button', { name: 'Retry analysis' }).click()
   await expect(control).toHaveValue('numeric')
   await expect(page.getByRole('alert')).toHaveCount(0)
+})
+
+test('JSON profiles native values, reports precision failures and reuses overrides in Arabic', async ({ page, context, browserName }) => {
+  const http = new Set<string>()
+  context.on('request', request => {
+    if (request.url().startsWith('http')) http.add(`${request.method()} ${request.url()}`)
+  })
+  await page.goto('/')
+  const fileInput = page.locator('input[type=file]')
+  await fileInput.setInputFiles(fileURLToPath(new URL('../fixtures/flat.json', import.meta.url)))
+  await expect(page.getByTestId('rows')).toHaveText('4')
+  await expect(page.getByTestId('columns')).toHaveText('4')
+  const profiles = page.getByRole('region', { name: 'Column profiles' })
+  const value = profiles.getByRole('row').filter({ has: page.getByRole('rowheader', { name: 'value', exact: true }) })
+  await value.getByText('Details', { exact: true }).click()
+  await expect(value.locator('dl')).toContainText('Mean20')
+  await expect(value.getByRole('listitem')).toHaveText('Record 4 9007199254740993')
+  await page.getByLabel('Language').selectOption('ar')
+  const override = page.getByRole('combobox', { name: /تجاوز النوع المستنتج.*value/ })
+  await override.selectOption('text')
+  await expect(override).toHaveValue('text')
+  await expect(page.getByTestId('rows')).toHaveText('٤')
+  expect(await page.evaluate(() => localStorage.length + sessionStorage.length)).toBe(0)
+  expect([...http].every(request => /^GET http:\/\/127\.0\.0\.1:4173\/(?:assets\/[^?]+)?$/.test(request))).toBe(true)
+  const scale = JSON.stringify(Array.from({ length: 10000 }, (_, index) => ({ value: index % 2 ? 30 : 10, label: 'قيمة' })))
+  await upload(page, scale, 'scale.json')
+  await expect(page.getByTestId('rows')).toHaveText('١٠٬٠٠٠')
+  console.log(JSON.stringify({ mode, browserName, format: 'json', rows: 10000, bytes: Buffer.byteLength(scale),
+    milliseconds: await page.evaluate(() => performance.getEntriesByName('askora:analysis').at(-1)?.duration) }))
+})
+
+test('XLSX worksheet selection, strict cell policy and local asset loading', async ({ page, context, browserName }) => {
+  const requests: { method: string; url: string; data: string | null }[] = []
+  context.on('request', request => {
+    if (request.url().startsWith('http')) requests.push({ method: request.method(), url: request.url(), data: request.postData() })
+  })
+  await page.goto('/')
+  expect(requests.some(request => request.url.includes('/xlsx-'))).toBe(false)
+  const fileInput = page.locator('input[type=file]')
+  await fileInput.setInputFiles(fileURLToPath(new URL('../fixtures/worksheets.xlsx', import.meta.url)))
+  await expect(page.getByTestId('rows')).toHaveText('4')
+  await expect(page.getByRole('region', { name: 'Dataset preview' }).getByText('2024-02-29')).toBeVisible()
+  const worksheet = page.getByLabel('Worksheet')
+  await expect(worksheet).toHaveValue('0')
+  const amount = page.getByRole('row').filter({ has: page.getByRole('rowheader', { name: 'amount', exact: true }) })
+  await amount.getByText('Details', { exact: true }).click()
+  await expect(amount.locator('dl')).toContainText('Mean14')
+  const override = amount.getByRole('combobox')
+  await override.selectOption('text')
+  await expect(override).toHaveValue('text')
+  await worksheet.selectOption('2')
+  await expect(page.getByRole('alert')).toContainText('unsupported content')
+  await worksheet.selectOption('1')
+  await expect(page.getByTestId('rows')).toHaveText('2')
+  await expect(override).toHaveValue('auto')
+  await amount.getByText('Details', { exact: true }).click()
+  await expect(amount.locator('dl')).toContainText('Mean50')
+  await page.getByLabel('Language').selectOption('ar')
+  await expect(page.getByLabel('ورقة العمل')).toHaveValue('1')
+  expect(requests.some(request => /\/assets\/xlsx-/.test(request.url))).toBe(true)
+  expect(requests.every(({ method, url, data }) => method === 'GET' &&
+    /^http:\/\/127\.0\.0\.1:4173\/(?:assets\/[^?]+)?$/.test(url) && data === null)).toBe(true)
+  console.log(JSON.stringify({ mode, browserName, format: 'xlsx', worksheet: 1,
+    milliseconds: await page.evaluate(() => performance.getEntriesByName('askora:analysis').at(-1)?.duration) }))
+})
+
+test('format rejection, cancellation and worker recovery preserve the next import', async ({ page, context }) => {
+  await page.goto('/')
+  const fileInput = page.locator('input[type=file]')
+  await upload(page, '[{"nested":{"value":10}}]', 'nested.json')
+  await expect(page.getByRole('alert')).toContainText('flat objects')
+  await fileInput.setInputFiles(fileURLToPath(new URL('../fixtures/unsupported.parquet', import.meta.url)))
+  await expect(page.getByRole('alert')).toContainText('Parquet is unavailable')
+  await fileInput.setInputFiles(fileURLToPath(new URL('../fixtures/oversize-workbook.xlsx', import.meta.url)))
+  await expect(page.getByRole('alert')).toContainText('expanded archive limit')
+  const pattern = '**/xlsx-*.js'
+  await context.route(pattern, () => {}) // Hold the optional module fetch while cancelling.
+  const workbook = fileURLToPath(new URL('../fixtures/worksheets.xlsx', import.meta.url))
+  await fileInput.setInputFiles(workbook)
+  await page.getByRole('button', { name: 'Cancel' }).click()
+  await expect(page.getByRole('status')).toHaveText('Analysis cancelled.')
+  await context.unroute(pattern)
+  await context.route(pattern, route => route.abort())
+  await fileInput.setInputFiles(workbook)
+  await expect(page.getByRole('alert')).toContainText('could not be processed')
+  await context.unroute(pattern)
+  await fileInput.setInputFiles(workbook)
+  await expect(page.getByTestId('rows')).toHaveText('4')
 })

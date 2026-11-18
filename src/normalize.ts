@@ -26,15 +26,7 @@ export function normalizeCsv(text: string, options: CsvOptions): Dataset {
   const first = readRecords(text, delimiter).next()
   if (first.done) throw new CsvError('empty')
   const hasHeader = options.header === 'first-row'
-  const names = hasHeader ? first.value.map(normalizedLabel) : []
-  const repeated = new Set(names.filter((name, index) => names.indexOf(name) !== index))
-  if (names.includes('') || (repeated.size && options.duplicateHeaders === 'reject')) {
-    throw new CsvError('headers')
-  }
-  const columns: Column[] = first.value.map((value, index) => ({
-    id: `column-${index + 1}`, index, sourceName: hasHeader ? value : null,
-    duplicateName: hasHeader && repeated.has(names[index]),
-  }))
+  const columns = normalizeColumns(first.value, hasHeader, options.duplicateHeaders)
 
   return {
     columns,
@@ -51,4 +43,17 @@ export function normalizeCsv(text: string, options: CsvOptions): Dataset {
       }
     },
   }
+}
+
+export function normalizeColumns(labels: readonly string[], hasHeader: boolean, policy: CsvOptions['duplicateHeaders']): Column[] {
+  const names = hasHeader ? labels.map(normalizedLabel) : []
+  const repeated = new Set(names.filter((name, index) => names.indexOf(name) !== index))
+  if (names.includes('') || (repeated.size && policy === 'reject')) {
+    throw new CsvError('headers')
+  }
+  return labels.map((value, index) => ({
+    id: `column-${index + 1}`, index, sourceName: hasHeader ? value : null,
+    duplicateName: hasHeader && repeated.has(names[index]),
+  }))
+
 }

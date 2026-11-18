@@ -9,6 +9,7 @@ export interface CsvOptions {
   duplicateHeaders: 'reject' | 'disambiguate'
   missingMarkers: readonly string[]
   schemaOverrides?: SchemaOverrides
+  worksheet?: number
 }
 
 export const defaultCsvOptions: CsvOptions = {
@@ -26,9 +27,12 @@ export interface Column {
 }
 
 /** A repeatable stream of rectangular, source-order records, excluding any header. */
+export type SourceCell = string | { text: string; kind: SchemaType | 'missing' | 'invalid' }
+
 export interface Dataset {
+  source?: 'structured'
   columns: readonly Column[]
-  records(): Iterable<readonly string[]>
+  records(): Iterable<readonly SourceCell[]>
 }
 
 export const schemaTypes = ['text', 'numeric', 'boolean', 'date'] as const
@@ -62,4 +66,5 @@ export interface DatasetProfile {
   preview: (readonly string[])[]
   duplicateRows: number
   salaryColumnId: string | null
+  workbook?: { names: string[]; selected: number }
 }

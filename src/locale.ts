@@ -3,8 +3,13 @@ import type { AnalysisErrorCode } from './analysis.ts'
 export type Locale = 'en' | 'ar'
 
 const enErrors = {
-  fileType: 'Choose a file with a .csv extension.',
+  fileType: 'Choose a CSV, JSON or XLSX file.',
   empty: 'The file is empty.',
+  jsonShape: 'JSON must be an array of flat objects with unique keys and scalar values.',
+  parquetDeferred: 'Parquet is unavailable in this build. Use CSV, JSON or XLSX.',
+  xlsxShape: 'The workbook is malformed or contains unsupported content.',
+  worksheet: 'Choose a valid worksheet.',
+  expandedLimit: 'The workbook exceeds the expanded archive limit.',
   fileSize: 'The file exceeds the 5 MiB limit.',
   encoding: 'Save the file as UTF-8 CSV and try again.',
   structure: 'The CSV contains an invalid field or unmatched quotes.',
@@ -23,8 +28,13 @@ const enErrors = {
 } satisfies Record<AnalysisErrorCode, string>
 
 const arErrors: typeof enErrors = {
-  fileType: 'اختر ملفًا بامتداد ‎.csv‎.',
+  fileType: 'اختر ملف CSV أو JSON أو XLSX.',
   empty: 'الملف فارغ.',
+  jsonShape: 'يجب أن يحتوي JSON على مصفوفة كائنات مسطحة بمفاتيح فريدة وقيم بسيطة.',
+  parquetDeferred: 'صيغة Parquet غير متاحة في هذا الإصدار. استخدم CSV أو JSON أو XLSX.',
+  xlsxShape: 'المصنف تالف أو يحتوي على محتوى غير مدعوم.',
+  worksheet: 'اختر ورقة عمل صالحة.',
+  expandedLimit: 'يتجاوز المصنف الحد المسموح به بعد فك الضغط.',
   fileSize: 'يتجاوز الملف الحد الأقصى البالغ ٥ ميبيبايت.',
   encoding: 'احفظ الملف بصيغة CSV بترميز UTF-8 ثم أعد المحاولة.',
   structure: 'يحتوي الملف على حقل غير صالح أو علامات اقتباس غير مغلقة.',
@@ -45,8 +55,8 @@ const arErrors: typeof enErrors = {
 export const messages = {
   en: {
     language: 'Language', theme: 'Theme', dark: 'Dark', light: 'Light',
-    title: 'CSV analysis', upload: 'Open a dataset', choose: 'Choose CSV',
-    guidance: 'UTF-8 CSV up to 5 MiB. The first record is used as the header by default.',
+    title: 'Dataset analysis', upload: 'Open a dataset', choose: 'Choose file',
+    guidance: 'CSV, JSON or XLSX up to 5 MiB. The first CSV or worksheet record is the header by default.',
     privacy: 'File contents stay in this tab.', bytes: 'bytes',
     busy: 'Analyzing file…', cancel: 'Cancel',
     summary: 'Analysis summary', mean: 'Mean salary', unavailable: 'Unavailable',
@@ -74,6 +84,7 @@ export const messages = {
       numericRange: 'Some numeric-looking values are outside the supported range or integer precision.',
       manyCategories: 'Frequency summary omitted because this column exceeds 1,024 distinct values.',
     },
+    worksheet: 'Worksheet',
     schemaOverride: 'Schema override', retry: 'Retry analysis',
     details: 'Details', frequency: 'Most frequent values', otherCategories: 'Other distinct values',
     count: 'Count', meanValue: 'Mean', min: 'Minimum', max: 'Maximum', median: 'Median',
@@ -82,8 +93,8 @@ export const messages = {
   },
   ar: {
     language: 'اللغة', theme: 'المظهر', dark: 'داكن', light: 'فاتح',
-    title: 'تحليل ملفات CSV', upload: 'افتح مجموعة بيانات', choose: 'اختر ملف CSV',
-    guidance: 'ملف CSV بترميز UTF-8 حتى ٥ ميبيبايت. يُستخدم السجل الأول للعناوين افتراضيًا.',
+    title: 'تحليل مجموعة البيانات', upload: 'افتح مجموعة بيانات', choose: 'اختر ملفًا',
+    guidance: 'ملف CSV أو JSON أو XLSX حتى ٥ ميبيبايت. يُستخدم السجل الأول في CSV أو ورقة العمل للعناوين افتراضيًا.',
     privacy: 'يبقى محتوى الملف في علامة التبويب هذه.', bytes: 'بايت',
     busy: 'جارٍ تحليل الملف…', cancel: 'إلغاء',
     summary: 'ملخص التحليل', mean: 'متوسط الراتب', unavailable: 'غير متاح',
@@ -111,6 +122,7 @@ export const messages = {
       numericRange: 'تتجاوز بعض القيم الشبيهة بالأرقام النطاق أو دقة الأعداد الصحيحة المدعومة.',
       manyCategories: 'لم تُعرض التكرارات لأن العمود يحتوي على أكثر من ١٬٠٢٤ قيمة مميزة.',
     },
+    worksheet: 'ورقة العمل',
     schemaOverride: 'تجاوز النوع المستنتج', retry: 'إعادة محاولة التحليل',
     details: 'التفاصيل', frequency: 'القيم الأكثر تكرارًا', otherCategories: 'قيم مميزة أخرى',
     count: 'العدد', meanValue: 'المتوسط', min: 'الحد الأدنى', max: 'الحد الأقصى', median: 'الوسيط',
