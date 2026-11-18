@@ -1,4 +1,6 @@
 import type { Clarification, ColumnRole, UnsupportedReason } from '../intent/contract.ts'
+import type { InferenceReason } from '../inference-contract.ts'
+import type { UndefinedStatistic } from '../statistics-contract.ts'
 import type { Locale } from '../locale.ts'
 import type { Assumption, ValidationReason } from '../router/contract.ts'
 
@@ -6,7 +8,20 @@ export const conversationCopy = {
   en: {
     title: 'Ask your data',
     hint: 'Ask one question about this dataset. Include the column name for a column-specific question.',
-    example: 'How many rows are there?',
+    example: 'Ask one question about this dataset',
+    examples: 'Try an example', moreExamples: 'Supported questions to try',
+    editQuestion: 'Edit question', retryHint: 'Retry the same question, or edit it below.',
+    reviewValues: {
+      noObservations: 'Review missing and invalid values in the column profile.',
+      insufficientObservations: 'Review the valid and excluded counts before retrying.',
+      constantInput: 'For Pearson correlation, choose two columns whose values vary among complete pairs.',
+      numericRange: 'Check the scale of the values in the column profile.',
+    },
+    reviewInference: {
+      insufficient: 'Check the valid counts for each sample or pair and review what was excluded.',
+      zeroVariance: 'Check whether the eligible values or paired differences vary.',
+      distribution: 'Review the sample and the assumptions before interpreting this result.',
+    },
     label: 'Question', keys: 'Enter to send · Shift+Enter for a new line', send: 'Send question',
     clear: 'Clear conversation', retry: 'Retry question', cancel: 'Cancel question',
     transcript: 'Conversation', you: 'You', answer: 'Askora', working: 'Analyzing your question…',
@@ -25,7 +40,7 @@ export const conversationCopy = {
     edit: 'Resubmit the complete question with the missing details.',
     role: { column: 'Analysis column', first: 'First column', second: 'Second column', grouping: 'Grouping column' },
     issue: {
-      missingColumn: 'Specify the column.', unknownColumn: 'This column could not be found.',
+      missingColumn: 'Specify the column.', unknownColumn: 'This column could not be found. Check the spelling in the column explorer.',
       ambiguousColumn: 'More than one column matches. Use the original name in quotes.',
       ineligibleColumn: 'The active column type is unsuitable for this analysis.',
       ambiguousColumnPair: 'More than one pair matches. Quote each original column name.',
@@ -34,7 +49,7 @@ export const conversationCopy = {
       comparisonMethod: 'Specify the comparison method.',
       convention: 'Specify sample or population.',
       rowMatching: 'Specify same-row matching for the paired test.',
-      missingNullMean: 'Specify the null mean.', invalidNullMean: 'Enter a finite numerical null mean.',
+      missingNullMean: 'Specify the null mean. Use a number in the same units as the column.', invalidNullMean: 'Enter a finite numerical null mean.',
       invalidConfidence: 'Use a confidence level of 90%, 95%, or 99%.',
       conflictingConfidence: 'Specify a single confidence level.',
     },
@@ -44,7 +59,7 @@ export const conversationCopy = {
       invalidSchema: 'The active column metadata could not be read.',
       unsupportedLanguage: 'Try asking in Arabic or English.',
       unknownOperation: 'Try a direct question about counts, missing values, or a supported statistical operation.',
-      unsupportedOperation: 'This operation is outside the supported analysis scope.',
+      unsupportedOperation: 'This operation is outside the supported analysis scope. Try a question about counts, missing values, or a supported statistic.',
       multipleOperations: 'Ask one question at a time.',
       unsupportedQualifier: 'This qualifier is outside the supported analysis scope.',
       dataModification: 'Askora answers questions about the dataset and leaves its values intact.',
@@ -78,7 +93,20 @@ export const conversationCopy = {
   ar: {
     title: 'اسأل بياناتك',
     hint: 'اطرح سؤالًا واحدًا عن هذه البيانات. اذكر اسم العمود إذا كان السؤال يخصّ عمودًا بعينه.',
-    example: 'كم عدد الصفوف؟',
+    example: 'اطرح سؤالًا واحدًا عن هذه البيانات',
+    examples: 'جرّب سؤالًا', moreExamples: 'أسئلة مدعومة يمكنك تجربتها',
+    editQuestion: 'تعديل السؤال', retryHint: 'أعد محاولة السؤال نفسه، أو عدّله أدناه.',
+    reviewValues: {
+      noObservations: 'راجع القيم المفقودة وغير الصالحة في ملف تعريف العمود.',
+      insufficientObservations: 'راجع عدد القيم الصالحة والمستبعدة قبل إعادة المحاولة.',
+      constantInput: 'لحساب ارتباط بيرسون، اختر عمودين تتغير قيمهما ضمن الأزواج المكتملة.',
+      numericRange: 'تحقّق من مقياس القيم في ملف تعريف العمود.',
+    },
+    reviewInference: {
+      insufficient: 'تحقّق من الأعداد الصالحة في كل عينة أو من عدد الأزواج المكتملة، وراجع ما استُبعد.',
+      zeroVariance: 'تحقّق مما إذا كانت القيم المؤهلة أو فروق الأزواج تتغيّر.',
+      distribution: 'راجع العينة والافتراضات قبل تفسير هذه النتيجة.',
+    },
     label: 'السؤال', keys: 'Enter للإرسال · Shift+Enter لسطر جديد', send: 'إرسال السؤال',
     clear: 'مسح المحادثة', retry: 'إعادة محاولة السؤال', cancel: 'إلغاء السؤال',
     transcript: 'المحادثة', you: 'أنت', answer: 'أسكورا', working: 'جارٍ تحليل سؤالك…',
@@ -97,7 +125,7 @@ export const conversationCopy = {
     edit: 'أعد إرسال السؤال كاملًا بعد إضافة التفاصيل الناقصة.',
     role: { column: 'عمود التحليل', first: 'العمود الأول', second: 'العمود الثاني', grouping: 'عمود المجموعات' },
     issue: {
-      missingColumn: 'حدّد العمود.', unknownColumn: 'تعذّر العثور على هذا العمود.',
+      missingColumn: 'حدّد العمود.', unknownColumn: 'تعذّر العثور على هذا العمود. تحقّق من اسمه في مستكشف الأعمدة.',
       ambiguousColumn: 'يوجد أكثر من عمود مطابق. استخدم الاسم الأصلي بين علامتي اقتباس.',
       ineligibleColumn: 'نوع العمود الحالي غير ملائم لهذا التحليل.',
       ambiguousColumnPair: 'يوجد أكثر من زوج أعمدة مطابق. ضع كل اسم أصلي بين علامتي اقتباس.',
@@ -106,7 +134,7 @@ export const conversationCopy = {
       comparisonMethod: 'حدّد طريقة المقارنة.',
       convention: 'حدّد ما إذا كان الحساب للعينة أم للمجتمع.',
       rowMatching: 'حدّد المطابقة داخل الصف لإجراء الاختبار المقترن.',
-      missingNullMean: 'حدّد المتوسط المفترض.', invalidNullMean: 'أدخل قيمة عددية محدودة للمتوسط المفترض.',
+      missingNullMean: 'حدّد المتوسط المفترض. استخدم رقمًا بوحدة القياس نفسها المستخدمة في العمود.', invalidNullMean: 'أدخل قيمة عددية محدودة للمتوسط المفترض.',
       invalidConfidence: 'استخدم مستوى ثقة ٩٠٪ أو ٩٥٪ أو ٩٩٪.',
       conflictingConfidence: 'حدّد مستوى ثقة واحدًا.',
     },
@@ -116,7 +144,7 @@ export const conversationCopy = {
       invalidSchema: 'تعذّرت قراءة معلومات الأعمدة الحالية.',
       unsupportedLanguage: 'جرّب السؤال بالعربية أو الإنجليزية.',
       unknownOperation: 'جرّب سؤالًا مباشرًا عن الأعداد أو القيم المفقودة أو عملية إحصائية مدعومة.',
-      unsupportedOperation: 'هذه العملية خارج نطاق التحليل المدعوم.',
+      unsupportedOperation: 'هذه العملية خارج نطاق التحليل المدعوم. جرّب سؤالًا عن الأعداد أو القيم المفقودة أو إحصاء مدعوم.',
       multipleOperations: 'اطرح سؤالًا واحدًا في كل مرة.',
       unsupportedQualifier: 'هذا الشرط خارج نطاق التحليل المدعوم.',
       dataModification: 'تجيب أسكورا عن أسئلة البيانات وتترك قيمها كما هي.',
@@ -148,6 +176,8 @@ export const conversationCopy = {
     },
   },
 } satisfies Record<Locale, {
+  reviewValues: Record<UndefinedStatistic, string>
+  reviewInference: Record<InferenceReason, string>
   role: Record<ColumnRole, string>
   issue: Record<Clarification['reason'], string>
   refusal: Record<UnsupportedReason, string>

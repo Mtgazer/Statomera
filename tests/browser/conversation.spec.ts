@@ -410,3 +410,44 @@ test('real conversation workers stay bounded across three dataset sizes and repe
   await expect(panel(page).getByText('How many rows are there?', { exact: true })).toHaveCount(0)
   expect(await workers()).toEqual(before)
 })
+
+test('schema-aware examples fill an editable draft and clarification preserves the question', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+  await upload(page, 'راتب net,description\n10,A\n30,B')
+  const workspace = panel(page)
+  const input = workspace.getByRole('textbox', { name: 'Question' })
+  const list = workspace.getByRole('list', { name: 'Try an example' })
+  await expect(list.getByRole('button')).toHaveCount(3)
+  const english = 'What is the mean of "راتب net"?'
+  await list.getByRole('button', { name: english }).press('Enter')
+  await expect(input).toHaveValue(english)
+  await expect(input).toBeFocused()
+  await expect(workspace.locator('.conversation-turns')).toHaveCount(0)
+  await input.press('Enter')
+  await expect(workspace.getByTestId('statistic-value')).toHaveText('20')
+
+  const question = 'mean of missing_column'
+  const reply = await ask(page, question)
+  await expect(reply).toContainText('Check the spelling in the column explorer.')
+  await reply.getByRole('button', { name: 'Edit question' }).press('Enter')
+  await expect(input).toBeFocused()
+  await expect(input).toHaveValue(question)
+  await expect(workspace.locator('.conversation-question')).toHaveCount(2)
+
+  await ask(page, 'Forecast salary')
+  await expect(workspace.getByRole('list', { name: 'Supported questions to try' })).toBeVisible()
+  await page.getByLabel('Language').selectOption('ar')
+  const arabic = 'ما متوسط "راتب net"؟'
+  await workspace.getByRole('button', { name: arabic }).click()
+  const arabicInput = workspace.getByRole('textbox', { name: 'السؤال' })
+  await expect(arabicInput).toHaveValue(arabic)
+  await expect(arabicInput).toBeFocused()
+  await expect(workspace.locator('.conversation-question')).toHaveCount(3)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
+
+  await upload(page, 'region\nNorth\nSouth')
+  const arabicList = workspace.getByRole('list', { name: 'جرّب سؤالًا' })
+  await expect(arabicList.getByRole('button')).toHaveCount(2)
+  await expect(arabicInput).toHaveValue('')
+})

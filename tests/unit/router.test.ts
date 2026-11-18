@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import { AnalysisError } from '../../src/analysis.ts'
+import { questionExamples } from '../../src/conversation/examples.ts'
 import { createDatasetSession } from '../../src/dataset-session.ts'
 import { defaultCsvOptions } from '../../src/dataset.ts'
 import type { CsvOptions } from '../../src/dataset.ts'
@@ -244,4 +245,40 @@ test('cancellation, supersession, replacement and worker failures settle determi
   assert.equal(result.status, 'failed')
   assert.equal(result.stage, 'execution')
   assert.equal(result.reason, 'read')
+})
+
+test('localized examples resolve through the router with original and quoted column names', async () => {
+  const { session, calls, publish, router } = setup()
+  publish('note,إيراد,ايراد\nA,10,100\nB,30,300')
+  const expected = [['en', 'What is the mean of "إيراد"?'], ['ar', 'ما متوسط "إيراد"؟']] as const
+  for (const [locale, meanQuestion] of expected) {
+    const examples = questionExamples(session.active()!, locale)
+    assert.equal(examples.length, 3)
+    assert.equal(examples[2], meanQuestion)
+    for (const example of examples) assert.equal(router.prepare(example).interpretation?.status, 'resolved')
+    const evidence = verified(await router.run(meanQuestion))
+    assert.equal(evidence.source, 'statisticsWorker')
+    assert.equal(evidence.result.value, 20)
+  }
+  assert.deepEqual(calls, ['mean', 'mean'])
+
+  publish('"salary ""USD""",note\n10,A\n30,B')
+  const quoted = questionExamples(session.active()!, 'en').at(-1)
+  assert.equal(quoted, 'What is the mean of “salary "USD"”?')
+  const quotedEvidence = verified(await router.run(quoted))
+  assert.equal(quotedEvidence.source, 'statisticsWorker')
+  assert.equal(quotedEvidence.result.value, 20)
+})
+
+test('examples omit ambiguous, overlong, unnamed, and ineligible measurement columns', () => {
+  const { session, calls, publish } = setup()
+  const text = `dup,dup,${'X'.repeat(512)}\n10,10,10\n20,20,20`
+  publish(text, { ...defaultCsvOptions, duplicateHeaders: 'disambiguate' })
+  assert.deepEqual(questionExamples(session.active()!, 'en'), ['How many rows are there?', 'Are there missing values?'])
+  publish('salary\n10\n30', { ...defaultCsvOptions, schemaOverrides: { 'column-1': 'text' } })
+  const arabic = ['ما عدد الصفوف؟', 'هل توجد قيم مفقودة؟']
+  assert.deepEqual(questionExamples(session.active()!, 'ar'), arabic)
+  publish('10\n30', { ...defaultCsvOptions, header: 'none' })
+  assert.deepEqual(questionExamples(session.active()!, 'ar'), arabic)
+  assert.deepEqual(calls, [])
 })

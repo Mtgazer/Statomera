@@ -185,17 +185,17 @@ export function StatisticEvidence({ result, locale }: { result: Omit<StatisticRe
   const paired = result.operation === 'pearson'
   return <>
     <p className="statistic-answer">{t.result} <strong data-testid="statistic-value" data-value={result.value ?? undefined}>
-      {result.value === null ? t.undefined : formatNumber(result.value, locale, 17)}
+      {result.value === null ? t.undefined : <bdi>{formatNumber(result.value, locale, 17)}</bdi>}
     </strong></p>
     {result.reason && <p>{t.reasons[result.reason]}</p>}
     <dl className="metrics">
       {([[paired ? t.pairs : t.valid, result.valid], [t.excluded, result.excluded],
         [t.missing, result.missingOnly], [t.invalid, result.invalid]] as const).map(([label, count]) =>
-        <div key={label}><dt>{label}</dt><dd>{formatNumber(count, locale)}</dd></div>,
+        <div key={label}><dt>{label}</dt><dd><bdi>{formatNumber(count, locale)}</bdi></dd></div>,
       )}
     </dl>
     <p className="muted"><strong>{t.method}</strong> {t.methods[result.method]}</p>
-    {result.warnings.map(warning => <p className="muted" key={warning}>{t.warnings[warning]}{paired && warning === 'excluded' && ' ' + t.pairedExclusion}</p>)}
+    {result.warnings.map(warning => <p className="muted evidence-warning" key={warning}>{t.warnings[warning]}{paired && warning === 'excluded' && ' ' + t.pairedExclusion}</p>)}
     {paired && <p className="muted">{t.pearsonHelp}</p>}
   </>
 }

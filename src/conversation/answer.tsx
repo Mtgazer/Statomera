@@ -59,9 +59,12 @@ export function ConversationAnswer({ result, locale }: { result: AnalysisExecuti
   const count = (value: number) => formatNumber(value, locale)
   const heading = result.status === 'completed' ? null : <h3>{replyLabel(result, locale)}</h3>
 
-  if (result.status === 'cancelled') return <>{heading}<p>{t.cancellation[result.reason]}</p></>
+  if (result.status === 'cancelled') return <>{heading}<p>{t.cancellation[result.reason]}</p>
+    {result.reason === 'user' && <p className="muted">{t.retryHint}</p>}
+  </>
   if (result.status === 'failed') return <>{heading}
     <p>{result.stage === 'validation' ? t.validation[result.reason] : messages[locale].errors[result.reason]}</p>
+    {result.stage === 'execution' && <p className="muted">{t.retryHint}</p>}
   </>
   if (result.status === 'unsupported') return <>{heading}<p>{t.refusal[result.reason]}</p></>
   if (result.status === 'needs_clarification') {
@@ -88,6 +91,11 @@ export function ConversationAnswer({ result, locale }: { result: AnalysisExecuti
   }
 
   const { evidence } = result
+  let next: string | undefined
+  if (result.status === 'unavailable') {
+    if (evidence.source === 'statisticsWorker' && evidence.result.reason) next = t.reviewValues[evidence.result.reason]
+    if (evidence.source === 'inferenceWorker' && evidence.result.reason) next = t.reviewInference[evidence.result.reason]
+  }
   return <>
     {heading}
     <h3>{operationName(result.operation, locale)}</h3>
@@ -117,6 +125,7 @@ export function ConversationAnswer({ result, locale }: { result: AnalysisExecuti
       {evidence.result.warnings.includes('pUnderflow') && evidence.result.logP !== null &&
         <p>{t.logP} · <bdi>{formatNumber(evidence.result.logP, locale, 17)}</bdi></p>}
     </>}
+    {next && <p className="conversation-next">{next}</p>}
     {result.assumptions.length > 0 && <details className="conversation-assumptions">
       <summary>{t.assumptions}</summary>
       <ul>{result.assumptions.map(assumption => <li key={assumption}>{t.assumption[assumption]}</li>)}</ul>

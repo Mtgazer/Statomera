@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { DatasetRevision, DatasetSession } from '../dataset-session.ts'
 import { questionLimit } from '../intent/columns.ts'
 import { formatNumber } from '../locale.ts'
@@ -7,6 +7,7 @@ import type { AnalysisExecution } from '../router/contract.ts'
 import { createAnalysisRouter } from '../router/execute.ts'
 import { ConversationAnswer, replyLabel } from './answer.tsx'
 import { conversationCopy } from './copy.ts'
+import { questionExamples } from './examples.ts'
 
 const turnLimit = 24
 type Turn = { id: number; question: string; reply?: AnalysisExecution }
@@ -25,6 +26,9 @@ export function ConversationPanel({ session, revision, locale }: {
   const transcript = useRef<HTMLOListElement>(null)
   const t = conversationCopy[locale]
   const overLimit = draft.length > questionLimit
+  const dataset = session.active()
+  const examples = useMemo(() => dataset?.revision === revision ? questionExamples(dataset, locale) : [],
+    [dataset, locale, revision])
 
   useLayoutEffect(() => () => {
     active.current?.abort()
@@ -64,6 +68,11 @@ export function ConversationPanel({ session, revision, locale }: {
     setTurns(previous => previous.map(turn => turn.id === id ? { ...turn, reply } : turn))
   }
 
+  function edit(question: string) {
+    setDraft(question)
+    input.current?.focus()
+  }
+
   function clear() {
     active.current?.abort()
     active.current = null
@@ -83,14 +92,26 @@ export function ConversationPanel({ session, revision, locale }: {
       <ol className="conversation-turns" ref={transcript} role="list" aria-label={t.transcript} tabIndex={0}>
         {turns.map(({ id, question, reply }) => <li key={id}>
           <p className="conversation-question"><strong>{t.you}</strong><bdi>{question}</bdi></p>
-          <div className="conversation-reply">
+          <div className="conversation-reply" data-state={reply?.status ?? 'pending'}>
             <span className="conversation-speaker">{t.answer}</span>
             {reply ? <ConversationAnswer result={reply} locale={locale} /> : <p>{t.working}</p>}
+            {id === latestId && (reply?.status === 'needs_clarification' || reply?.status === 'unsupported' ||
+              reply?.status === 'cancelled' || (reply?.status === 'failed' && reply.stage === 'execution')) &&
+              <button type="button" disabled={busy} onClick={() => edit(question)}>{t.editQuestion}</button>}
             {(reply?.status === 'cancelled' || (reply?.status === 'failed' && reply.stage === 'execution')) &&
               <button type="button" disabled={busy} onClick={() => { void submit(question, id) }}>{t.retry}</button>}
           </div>
         </li>)}
       </ol>}
+    {examples.length > 0 && (turns.length === 0 || last?.status === 'unsupported') &&
+      <div className="conversation-examples">
+        <p id="conversation-examples-title" className="muted">{last ? t.moreExamples : t.examples}</p>
+        <ul role="list" aria-labelledby="conversation-examples-title">
+          {examples.map(question => <li key={question}>
+            <button type="button" onClick={() => edit(question)}><bdi>{question}</bdi></button>
+          </li>)}
+        </ul>
+      </div>}
     <form className="conversation-form" onSubmit={event => { event.preventDefault(); void submit(draft) }}>
       <label htmlFor="conversation-question">{t.label}</label>
       <textarea ref={input} id="conversation-question" rows={2} dir="auto" value={draft} maxLength={questionLimit + 1}

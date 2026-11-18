@@ -151,7 +151,7 @@ export function InferenceOutput({ result, locale }: { result: InferenceResult; l
     </table>
     <p>{t.excludedTotal} <bdi>{number(result.excluded)}</bdi>
       {request.method === 'welch' && <> · {t.outside} <bdi>{number(result.outsideGroups)}</bdi></>}</p>
-    {result.warnings.map(warning => <p className="muted" key={warning}>{t.warnings[warning]}</p>)}
+    {result.warnings.map(warning => <p className="muted evidence-warning" key={warning}>{t.warnings[warning]}</p>)}
   </>
 }
 

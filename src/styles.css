@@ -261,3 +261,24 @@ td[data-selected], tr[data-selected] > th { background: var(--selection); }
 .conversation-actions { justify-content: flex-end; }
 .conversation-actions span { margin-inline-end: auto; font-size: .85rem; }
 .conversation-actions button:disabled, .conversation-reply button:disabled { opacity: .65; cursor: default; }
+
+.conversation-examples { margin-block: .85rem; }
+.conversation-examples ul {
+  display: flex; flex-wrap: wrap; gap: .45rem; list-style: none; margin-block: .4rem 0; padding: 0;
+}
+.conversation-examples li { min-inline-size: 0; max-inline-size: 100%; }
+.conversation-examples button {
+  max-inline-size: 100%; padding: .35rem .7rem; text-align: start; overflow-wrap: anywhere; font-weight: 500;
+}
+.conversation-reply[data-state='needs_clarification'],
+.conversation-reply[data-state='unsupported'],
+.conversation-reply[data-state='unavailable'],
+.conversation-reply[data-state='failed'] { border-inline-start-width: .2rem; border-inline-start-color: var(--control-border); }
+.conversation-reply[data-state='failed'] { border-inline-start-color: var(--error); }
+.conversation-reply > button { margin-block: .15rem; margin-inline-end: .45rem; }
+.conversation-reply .statistic-answer strong, .conversation-reply .metrics dd,
+.conversation-reply .inference-counts td { font-variant-numeric: tabular-nums; }
+.conversation-reply .evidence-warning, .conversation-reply .conversation-next {
+  padding: .4rem .65rem; border-inline-start: .15rem solid var(--control-border); background: var(--surface);
+}
+.conversation-assumptions { margin-block-start: .75rem; }
