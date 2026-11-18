@@ -2,25 +2,25 @@
 
 Askora is a bilingual conversational data analysis workspace in development. Users will open a dataset in their browser, inspect its quality and ask questions in English, Arabic or both. Answers will use real analytical computations and show the data and assumptions behind them.
 
-The current CSV proof opens local CSV files and verifies salary analysis in English and Arabic. The first public beta still targets zero project spend.
+The CSV profiler opens local CSV files and shows a preview, inferred types, quality counts and numerical or categorical summaries in English and Arabic. The first public beta still targets zero project spend.
 
-## Run the proof locally
+## Run the profiler locally
 
 Use Node.js 22.18 or newer. From the Askora repository root, run:
 
 ```sh
 npm ci --ignore-scripts
 npm test
-npm run build
-npm run preview -- --host 127.0.0.1
+npm run build:portable
+npm run preview:portable -- --host 127.0.0.1
 ```
 
-Open the loopback address printed by Vite and choose `tests/fixtures/salary.csv`. Expect five records, three valid salaries, one blank, one invalid, and a mean of 20. See the [Phase 1A report](docs/PHASE_1A_REPORT.md) for the input policy, browser commands and known limits.
-
-To try the recommended smaller build locally, run `npm run build:portable` and `npm run preview:portable -- --host 127.0.0.1`. The proof and fixture are the same. [Phase 1B results](docs/PHASE_1B_REPORT.md)
+Open the loopback address printed by Vite and choose `tests/fixtures/salary.csv`. Expect five records, three valid salaries, one blank, one invalid, and a mean of 20. Try `tests/fixtures/mixed.csv` with the common missing-marker option enabled to see a generic profile. [Phase 2A report](docs/PHASE_2A_REPORT.md)
 
 ## Project documentation
 
+- [Phase 2A profiler and verification](docs/PHASE_2A_REPORT.md)
+- [Phase 1B build and deployment measurements](docs/PHASE_1B_REPORT.md)
 - [Phase 1A results and test commands](docs/PHASE_1A_REPORT.md)
 - [Codex skills setup](docs/CODEX_SKILLS.md)
 - [Phase 0 report and proof-of-concept plan](docs/PHASE_0_REPORT.md)

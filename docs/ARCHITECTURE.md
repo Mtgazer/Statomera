@@ -1,6 +1,6 @@
 # Proposed architecture
 
-Use a static React application with strict TypeScript and Vite. Use plain CSS logical properties and shared tokens initially. For the initial CSV slice, Phase 1B recommends the portable TypeScript worker build. It shares the parser and result contract with the single-threaded DuckDB-Wasm reference builds. Keep DuckDB under evaluation for broader operations and formats such as Parquet. The portable worker scans bounded records from the decoded file and accumulates only the current mean. See the [Phase 1B measurements](PHASE_1B_REPORT.md).
+Use a static React application with strict TypeScript and Vite. Use plain CSS logical properties and shared tokens initially. For the initial CSV slice, Phase 1B recommends the portable TypeScript worker build. It shares the parser and result contract with the single-threaded DuckDB-Wasm reference builds. Keep DuckDB under evaluation for broader operations and formats such as Parquet. The portable worker uses bounded CSV records and a generic profiling contract. It detects missing and invalid values, repeated rows and basic per-column summaries. See the [Phase 1B measurements](PHASE_1B_REPORT.md).
 
 ## Data and execution boundaries
 
@@ -12,6 +12,10 @@ Use a static React application with strict TypeScript and Vite. Use plain CSS lo
 6. Localized result templates and chart adapters consume only verified evidence. Sampling for charts or profiling must be labeled, including the method and sample size. An optional interpreter can propose intents but has no authority to execute code or provide numerical facts.
 
 Hold datasets in volatile storage initially. Reset after cancellation by terminating a stuck worker and clearing its session. Restore only through explicit re-import. Cloud inference or shared workspaces would require an approved backend for secret protection, consent, authentication and quotas. The beta core has no such dependency.
+
+## CSV profiling contract
+
+`csv.ts` owns decoding, record boundaries and delimiter discovery. `normalize.ts` turns parsed CSV into a repeatable rectangular `Dataset` with positional column IDs. `infer.ts` owns cell recognition and column type policy. `profile.ts` combines dataset, missing-marker policy and evidence, then delegates calculation to `summaries.ts` and the existing binary64 mean. `results.tsx` presents the returned `DatasetProfile` with localized values and warnings. Only the worker handles the full decoded file. See the [Phase 2A contract and limits](PHASE_2A_REPORT.md#contract-and-interpretation).
 
 ## Candidate comparison
 

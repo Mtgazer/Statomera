@@ -13,3 +13,7 @@ Use small synthetic fixtures with reviewed expected outcomes, plus generated sca
 | Security and release | Negative input tests, no accidental network transfer, bounded output, app and worker CSP, secret and dependency checks, upgrade/rollback, anonymous access, browser compatibility and feedback data minimization. |
 
 Run fast checks per change. Run browser smoke tests on branch review and real-device tests at ingestion, analytics, PWA and release milestones. Publish actual pass/fail evidence and rerun regressions after fixes. Release only when approved functionality passes deterministic references, supported browser and language paths work, privacy controls hold, and known limits are published.
+
+## Phase 2A fixtures
+
+Run the existing unit suite and the browser suite against portable, MVP and EH builds. The CSV reference fixtures cover generic schemas, duplicate headers, empty and malformed files, opt-in markers, unsafe integers, Arabic and quoted values, booleans, ambiguous dates and exact repeated rows. Verify count partitions and hand-derived numerical summaries. The browser suite includes a deterministic multilingual 80,000-row fixture in addition to the previous scale runs. See [Phase 2A verification](PHASE_2A_REPORT.md#verification-and-performance) for commands, measurements and device coverage.
