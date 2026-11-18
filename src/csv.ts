@@ -93,7 +93,7 @@ function numericValue(value: string): number | null {
   return number
 }
 
-export function profileCsv(text: string) {
+export function profileCsv(text: string, collectNumber?: (value: number) => void) {
   const iterator = records(text)
   const first = iterator.next()
   if (first.done || !text.trim()) throw new CsvError('empty')
@@ -112,6 +112,7 @@ export function profileCsv(text: string) {
   const observations: string[] = []
   let rows = 0
   let invalid = 0
+  let valid = 0
 
   for (const row of iterator) {
     rows++
@@ -128,7 +129,9 @@ export function profileCsv(text: string) {
     if (!value) continue
     const number = numericValue(value)
     if (number !== null) {
-      observations.push(String(number))
+      valid++
+      if (collectNumber) collectNumber(number)
+      else observations.push(String(number))
       continue
     }
     invalid++
@@ -136,7 +139,7 @@ export function profileCsv(text: string) {
   }
 
   return {
-    profile: { headers, missing, rows, preview, salaryIndex, valid: observations.length, invalid, rejected },
+    profile: { headers, missing, rows, preview, salaryIndex, valid, invalid, rejected },
     numericCsv: observations.join('\n'),
   }
 }

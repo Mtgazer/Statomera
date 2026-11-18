@@ -2,6 +2,11 @@ import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 import { fileURLToPath } from 'node:url'
 
+const mode = process.env.ASKORA_TEST_MODE ?? 'production'
+const portable = mode === 'portable'
+const dist = portable ? 'dist-portable' : mode === 'duckdb-eh' ? 'dist-eh' : 'dist'
+const workerPattern = portable ? '**/parse.worker-*.js' : '**/duckdb-browser-*.worker-*.js'
+
 const fixture = fileURLToPath(new URL('../fixtures/salary.csv', import.meta.url))
 
 async function upload(page: Page, value: string | Buffer, name = 'sample.csv') {
@@ -114,25 +119,26 @@ test('cancel terminates active work and a replaced file takes precedence', async
   await upload(page, 'salary\n100')
   await upload(page, 'salary\n50')
   await expect(page.getByTestId('mean')).toHaveText('50')
-  expect(await page.evaluate(() => performance.getEntriesByName('askora:test:terminated').length)).toBe(4)
+  expect(await page.evaluate(() => performance.getEntriesByName('askora:test:terminated').length)).toBe(portable ? 3 : 4)
 })
 
 test('an engine startup failure is localized and retryable', async ({ page, context }) => {
-  const pattern = '**/duckdb-browser-mvp.worker-*.js'
+  const pattern = workerPattern
   await context.route(pattern, route => route.abort())
   await page.goto('/')
   await page.getByLabel('Language').selectOption('ar')
   await page.locator('input[type=file]').setInputFiles(fixture)
-  await expect(page.getByRole('alert')).toHaveText(/تعذّر إكمال التحليل/)
+  await expect(page.getByRole('alert')).toHaveText(portable ? /تعذّرت معالجة الملف/ : /تعذّر إكمال التحليل/)
   await context.unroute(pattern)
   await page.locator('input[type=file]').setInputFiles(fixture)
   await expect(page.getByTestId('mean')).toHaveText('٢٠')
 })
 
 test('a stalled engine hits the time budget and can be retried', async ({ page, context }) => {
-  const pattern = '**/*.wasm'
-  // A real failed Wasm fetch can leave the pinned engine waiting for startup.
-  await context.route(pattern, route => route.abort())
+  const pattern = portable ? workerPattern : '**/*.wasm'
+  await context.route(pattern, route => portable
+    ? route.fulfill({ contentType: 'text/javascript', body: '' })
+    : route.abort())
   await page.goto('/')
   await page.locator('input[type=file]').setInputFiles(fixture)
   await expect(page.getByRole('alert')).toHaveText(/10-second limit|engine could not finish/, { timeout: 12_000 })
@@ -173,8 +179,8 @@ test('local-only requests, inert cell rendering, no storage and bounded performa
     }))
   }
 
-  expect(requests.some(request => request.url.endsWith('.wasm'))).toBe(true)
-  expect(wasmMime).toContain('application/wasm')
+  expect(requests.some(request => request.url.endsWith('.wasm'))).toBe(!portable)
+  if (!portable) expect(wasmMime).toContain('application/wasm')
   expect(policies.length).toBeGreaterThan(0)
   expect(policies.every(policy => policy.includes("connect-src 'self'"))).toBe(true)
   for (const request of requests) {
@@ -200,7 +206,7 @@ test('local-only requests, inert cell rendering, no storage and bounded performa
   }))
   expect([runtime.local, runtime.session, runtime.indexed, runtime.cache]).toEqual([0, 0, 0, 0])
   expect(await context.cookies()).toEqual([])
-  console.log(JSON.stringify({ browserName, bytes: data.length, rows: 60000, ...runtime, firstAnalysisMs, timings }))
+  console.log(JSON.stringify({ mode, browserName, bytes: data.length, rows: 60000, ...runtime, firstAnalysisMs, timings }))
 })
 
 test('analysis works when previously loaded assets are supplied without live requests', async ({ page, context }) => {
@@ -222,7 +228,7 @@ test('analysis works when previously loaded assets are supplied without live req
     const url = new URL(route.request().url())
     if (url.protocol === 'blob:' && url.origin === origin) return route.continue()
     if (url.origin !== origin || url.search || !cached.has(url.pathname)) return route.abort()
-    const path = fileURLToPath(new URL('../../dist' + url.pathname, import.meta.url))
+    const path = fileURLToPath(new URL('../../' + dist + url.pathname, import.meta.url))
     return route.fulfill({
       path,
       contentType: url.pathname.endsWith('.wasm') ? 'application/wasm' : 'text/javascript',
@@ -231,4 +237,41 @@ test('analysis works when previously loaded assets are supplied without live req
   })
   await upload(page, 'salary\n60\n80')
   await expect(page.getByTestId('mean')).toHaveText('70')
+})
+
+test('near-limit input returns the reference mean and retires every worker', async ({ page, context, browserName }) => {
+  await page.setViewportSize({ width: 360, height: 800 })
+  await page.addInitScript(() => {
+    const NativeWorker = window.Worker
+    window.Worker = class extends NativeWorker {
+      constructor(url: string | URL, options?: WorkerOptions) {
+        super(url, options)
+        performance.mark('askora:test:started')
+      }
+      terminate() {
+        performance.mark('askora:test:terminated')
+        super.terminate()
+      }
+    }
+  })
+  if (portable && browserName === 'chromium') {
+    const cdp = await context.newCDPSession(page)
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 })
+  }
+  await page.goto('/')
+  const name = 'x'.repeat(45)
+  const data = Buffer.from('employee,salary\n' + `${name},10\n${name},30\n`.repeat(50_000))
+  await upload(page, data)
+  await expect(page.getByTestId('rows')).toHaveText('100,000', { timeout: 12_000 })
+  await expect(page.getByTestId('mean')).toHaveAttribute('data-value', '20')
+  const stats = await page.evaluate(() => ({
+    started: performance.getEntriesByName('askora:test:started').length,
+    terminated: performance.getEntriesByName('askora:test:terminated').length,
+    milliseconds: performance.getEntriesByName('askora:analysis').at(-1)?.duration,
+  }))
+  expect(stats.started).toBe(portable ? 1 : 2)
+  expect(stats.terminated).toBe(stats.started)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(360)
+  console.log(JSON.stringify({ mode, browserName, rows: 100000, bytes: data.length,
+    cpuThrottle: portable && browserName === 'chromium' ? 4 : 1, ...stats }))
 })
