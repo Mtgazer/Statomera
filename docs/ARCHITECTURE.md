@@ -23,6 +23,8 @@ Phase 4A uses the same short-lived parser worker for on-demand descriptive stati
 
 Phase 4B adds on-demand Student t inference to the same local worker path. Eligibility follows the active schema, paired tests align complete rows, and Welch uses disjoint values of one grouping field. Worker results carry method, counts, effect-size definition, numeric-range warnings and unavailable states. See the [Phase 4B methods and verification](PHASE_4B_REPORT.md).
 
+Phase 4C renders local SVG charts from verified column and inference profiles. Pearson results include bounded complete-pair points or an all-pair density grid. The parser worker performs the grid aggregation. React maps values into plot coordinates and exposes equivalent numeric displays. See the [Phase 4C conventions and verification](PHASE_4C_REPORT.md).
+
 ## Candidate comparison
 
 Primary references reviewed 2026-11-18. Package licenses are indicative for the named project, with pinned dependency, font and model terms to be verified before adoption. Device and performance judgments are design estimates.
