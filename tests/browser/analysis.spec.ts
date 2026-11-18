@@ -259,16 +259,31 @@ test('near-limit input returns the reference mean and retires every worker', asy
     await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 })
   }
   await page.goto('/')
+  await page.evaluate(() => {
+    function tick() {
+      performance.mark('askora:test:frame')
+      if (!performance.getEntriesByName('askora:analysis').length) requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+  })
   const name = 'x'.repeat(45)
   const data = Buffer.from('employee,salary\n' + `${name},10\n${name},30\n`.repeat(50_000))
   await upload(page, data)
   await expect(page.getByTestId('rows')).toHaveText('100,000', { timeout: 12_000 })
   await expect(page.getByTestId('mean')).toHaveAttribute('data-value', '20')
-  const stats = await page.evaluate(() => ({
-    started: performance.getEntriesByName('askora:test:started').length,
-    terminated: performance.getEntriesByName('askora:test:terminated').length,
-    milliseconds: performance.getEntriesByName('askora:analysis').at(-1)?.duration,
-  }))
+  const stats = await page.evaluate(() => {
+    const run = performance.getEntriesByName('askora:analysis').at(-1)!
+    const ticks = performance.getEntriesByName('askora:test:frame').map(frame => frame.startTime)
+      .filter(time => time >= run.startTime && time <= run.startTime + run.duration)
+    const gaps = ticks.slice(1).map((time, index) => time - ticks[index])
+    return {
+      started: performance.getEntriesByName('askora:test:started').length,
+      terminated: performance.getEntriesByName('askora:test:terminated').length,
+      milliseconds: run.duration,
+      frameSamples: ticks.length,
+      maxFrameGapMs: gaps.length ? Math.max(...gaps) : null,
+    }
+  })
   expect(stats.started).toBe(portable ? 1 : 2)
   expect(stats.terminated).toBe(stats.started)
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(360)
@@ -299,7 +314,7 @@ test('generic profiles expose quality counts and localized numeric and categoric
   await group.getByText('Details', { exact: true }).click()
   await expect(group.getByRole('table', { name: 'Most frequent values' })).toContainText('جنوب5')
   const date = column('day')
-  await expect(date.getByText('ISO date')).toBeVisible()
+  await expect(date.getByRole('cell', { name: 'ISO date', exact: true })).toBeVisible()
   await date.getByText('Details', { exact: true }).click()
   await expect(date.getByText(/date-like values are ambiguous/)).toBeVisible()
 
@@ -344,4 +359,49 @@ test('profiles a large multi-column dataset inside the existing bounds', async (
   await expect(row.locator('dl')).toHaveText('Count80,000Mean20Minimum10Maximum30Median20')
   const milliseconds = await page.evaluate(() => performance.getEntriesByName('askora:analysis').at(-1)?.duration)
   console.log(JSON.stringify({ mode, browserName, bytes: data.length, rows: 80000, columns: 4, milliseconds }))
+})
+
+test('schema overrides reprofile the original values and reset with a new file', async ({ page }) => {
+  await page.goto('/')
+  await upload(page, 'measure\n10\n"$20"\n30\n"1,20"')
+  const control = page.getByRole('combobox', { name: /Schema override.*measure/ })
+  await expect(control).toHaveValue('auto')
+  await control.focus()
+  await expect(control).toBeFocused()
+  await control.selectOption('numeric')
+  await expect(control).toHaveValue('numeric')
+  const row = page.getByRole('row').filter({ has: control })
+  await row.getByText('Details', { exact: true }).click()
+  await expect(row.locator('dl')).toContainText('Mean20')
+  await expect(row.getByRole('listitem')).toHaveText(['Record 2 $20', 'Record 4 1,20'])
+  await page.getByLabel('Language').selectOption('ar')
+  const arabicControl = page.getByRole('combobox', { name: /تجاوز النوع المستنتج.*measure/ })
+  await expect(arabicControl).toHaveValue('numeric')
+  await arabicControl.selectOption('auto')
+  await expect(arabicControl).toHaveValue('auto')
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
+  await upload(page, 'measure\nTRUE\nFALSE')
+  await expect(arabicControl).toHaveValue('auto')
+  await expect(page.getByRole('cell', { name: 'قيمة منطقية', exact: true })).toBeVisible()
+})
+
+test('cancelled or failed schema work hides stale results and can be retried', async ({ page, context }) => {
+  await page.goto('/')
+  await upload(page, 'value\n10\nbad\n30')
+  const control = page.getByRole('combobox', { name: /Schema override.*value/ })
+  await expect(control).toHaveValue('auto')
+  const parser = '**/parse.worker-*.js'
+  await context.route(parser, route => route.fulfill({ contentType: 'text/javascript', body: '' }))
+  await control.selectOption('numeric')
+  await expect(control).toHaveCount(0)
+  await page.getByRole('button', { name: 'Cancel' }).click()
+  await expect(page.getByRole('status')).toHaveText('Analysis cancelled.')
+  await context.unroute(parser)
+  await context.route(parser, route => route.abort())
+  await page.getByRole('button', { name: 'Retry analysis' }).click()
+  await expect(page.getByRole('alert')).toContainText('could not be processed')
+  await context.unroute(parser)
+  await page.getByRole('button', { name: 'Retry analysis' }).click()
+  await expect(control).toHaveValue('numeric')
+  await expect(page.getByRole('alert')).toHaveCount(0)
 })

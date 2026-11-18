@@ -1,12 +1,12 @@
 import type { FrequencySummary, NumericSummary } from './dataset.ts'
 import { Binary64Mean } from './mean.ts'
 
-export function summarizeNumbers(values: number[]): NumericSummary | null {
+export function summarizeNumbers(values: Float64Array): NumericSummary | null {
   if (!values.length) return null
   const calculator = new Binary64Mean()
   for (const value of values) calculator.add(value)
   const mean = calculator.result()!
-  values.sort((a, b) => a - b)
+  values.sort()
   const center = Math.floor(values.length / 2)
   let median = values[center]
   if (values.length % 2 === 0) {

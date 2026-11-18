@@ -1,5 +1,6 @@
-import { limits } from './csv.ts'
-import type { ColumnProfile, ColumnWarning, Dataset, DatasetProfile } from './dataset.ts'
+import { CsvError, limits } from './csv.ts'
+import { schemaTypes } from './dataset.ts'
+import type { ColumnProfile, ColumnWarning, Dataset, DatasetProfile, SchemaOverrides } from './dataset.ts'
 import { classify, inferType } from './infer.ts'
 import type { Evidence } from './infer.ts'
 import { normalizedLabel } from './normalize.ts'
@@ -11,7 +12,14 @@ export function profileDataset(
   dataset: Dataset,
   isMarker: (value: string) => boolean,
   onSalaryNumber?: (value: number) => void,
+  overrides: SchemaOverrides = {},
 ): DatasetProfile {
+  const selected = new Map(Object.entries(overrides))
+  for (const [id, type] of selected) {
+    if (!type || !schemaTypes.includes(type) || !dataset.columns.some(column => column.id === id)) {
+      throw new CsvError('options')
+    }
+  }
   const salaryColumns = dataset.columns.filter(column => column.sourceName !== null &&
     salaryNames.has(normalizedLabel(column.sourceName)))
   const salaryColumnId = salaryColumns.length === 1 ? salaryColumns[0].id : null
@@ -48,16 +56,21 @@ export function profileDataset(
         }
       })
     }
+    seen.clear()
   }
 
   const columns = dataset.columns.map((column, index): ColumnProfile => {
     const { evidence, warnings, blank, markedMissing } = state[index]
-    const type = column.id === salaryColumnId ? 'numeric' : inferType(evidence, warnings.has('leadingZeros'))
+    const override = selected.get(column.id) ?? null
+    const type = override ?? (column.id === salaryColumnId ? 'numeric' : inferType(evidence, warnings.has('leadingZeros')))
     if (Object.values(evidence).filter(count => count > 0).length > 1) warnings.add('mixed')
-    return { ...column, type, blank, markedMissing, invalid: 0, valid: 0, rejected: [],
+    return { ...column, type, override, blank, markedMissing, invalid: 0, valid: 0, rejected: [],
       warnings: [...warnings], numeric: null, frequency: null }
   })
-  const numbers = columns.map(column => column.type === 'numeric' ? [] as number[] : null)
+  // The first pass already counted every admissible numeric value. Pack only those
+  // values for the exact median and avoid dynamic array capacity and boxing.
+  const numbers = columns.map((column, index) => column.type === 'numeric'
+    ? new Float64Array(state[index].evidence.numeric) : null)
   const frequencies = columns.map(column => column.type === 'text' || column.type === 'boolean'
     ? new Map<string, number>() : null)
 
@@ -68,7 +81,7 @@ export function profileDataset(
       const value = raw.trim()
       if (!value || isMarker(value)) return
       const column = columns[index]
-      const parsed = classify(value)
+      const parsed = column.type === 'text' ? { type: 'text' } as const : classify(value)
       if (column.type !== 'text' && parsed.type !== column.type) {
         column.invalid++
         if (column.rejected.length < limits.rejected) column.rejected.push({ record, value: raw })
@@ -76,7 +89,7 @@ export function profileDataset(
       }
       column.valid++
       if (column.type === 'numeric' && parsed.type === 'numeric') {
-        numbers[index]!.push(parsed.value)
+        numbers[index]![column.valid - 1] = parsed.value
         if (column.id === salaryColumnId) onSalaryNumber?.(parsed.value)
       }
       const counts = frequencies[index]

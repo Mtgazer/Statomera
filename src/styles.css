@@ -92,3 +92,5 @@ summary { cursor: pointer; }
 .profile-statistics { margin-block: .5rem 0; }
 .profile-statistics div { display: flex; justify-content: space-between; gap: .75rem; }
 .profile-statistics dd { margin: 0; font-variant-numeric: tabular-nums; }
+
+.schema-type { max-inline-size: 10rem; }

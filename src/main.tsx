@@ -5,7 +5,7 @@ import type { AnalysisErrorCode, AnalysisResult } from './analysis.ts'
 import { formatNumber, messages } from './locale.ts'
 import type { Locale } from './locale.ts'
 import { commonMissingMarkers, defaultCsvOptions } from './dataset.ts'
-import type { CsvOptions } from './dataset.ts'
+import type { CsvOptions, SchemaType } from './dataset.ts'
 import { Results } from './results.tsx'
 import './styles.css'
 
@@ -22,6 +22,10 @@ function App() {
   const [options, setOptions] = useState(defaultCsvOptions)
   const [fileInfo, setFileInfo] = useState<{ name: string; size: number }>()
   const job = useRef<AbortController | null>(null)
+  const session = useRef<{ file: File; options: CsvOptions } | null>(null)
+  const overrideFocus = useRef<string | null>(null)
+  const cancelButton = useRef<HTMLButtonElement>(null)
+  const retryButton = useRef<HTMLButtonElement>(null)
   const picker = useRef<HTMLInputElement>(null)
   const choose = useRef<HTMLButtonElement>(null)
   const t = messages[locale]
@@ -34,16 +38,36 @@ function App() {
 
   useEffect(() => () => job.current?.abort(), [])
 
-  async function start(file: File) {
+  useLayoutEffect(() => {
+    if (!overrideFocus.current) return
+    if (status.phase === 'busy') cancelButton.current?.focus()
+    if (status.phase === 'complete') {
+      if (document.activeElement === document.body) document.getElementById(`schema-${overrideFocus.current}`)?.focus()
+      overrideFocus.current = null
+    }
+    if (status.phase === 'error' && document.activeElement === document.body) retryButton.current?.focus()
+  }, [status])
+
+  function updateOverride(id: string, type: SchemaType | 'auto') {
+    const current = session.current
+    if (!current) return
+    const schemaOverrides = { ...current.options.schemaOverrides, [id]: type === 'auto' ? undefined : type }
+    if (type === 'auto') delete schemaOverrides[id]
+    overrideFocus.current = id
+    void start(current.file, { ...current.options, schemaOverrides })
+  }
+
+  async function start(file: File, importOptions: CsvOptions) {
     job.current?.abort()
     const controller = new AbortController()
     job.current = controller
+    session.current = { file, options: importOptions }
     setFileInfo({ name: file.name, size: file.size })
     setStatus({ phase: 'busy' })
     performance.clearMeasures('askora:analysis')
     const startTime = performance.now()
     try {
-      const result = await analyzeFile(file, controller.signal, options)
+      const result = await analyzeFile(file, controller.signal, importOptions)
       if (job.current !== controller) return
       performance.measure('askora:analysis', {
         start: startTime, end: performance.now(), detail: result.timings,
@@ -86,14 +110,21 @@ function App() {
           <input ref={picker} type="file" accept=".csv,text/csv" hidden onChange={event => {
             const selected = event.currentTarget.files?.[0]
             event.currentTarget.value = ''
-            if (selected) void start(selected)
+            if (selected) {
+              overrideFocus.current = null
+              void start(selected, options)
+            }
           }} />
           <button ref={choose} className="primary" type="button" aria-describedby="upload-guidance"
             onClick={() => picker.current?.click()}>{t.choose}</button>
-          {status.phase === 'busy' && <button type="button" onClick={() => {
+          {status.phase === 'busy' && <button ref={cancelButton} type="button" onClick={() => {
             job.current?.abort()
             choose.current?.focus()
           }}>{t.cancel}</button>}
+          {status.phase === 'error' && overrideFocus.current && <button ref={retryButton} type="button" onClick={() => {
+            const current = session.current
+            if (current) void start(current.file, current.options)
+          }}>{t.retry}</button>}
         </div>
         <details className="import-options">
           <summary>{t.importOptions}</summary>
@@ -129,7 +160,7 @@ function App() {
       </div>
       {status.phase === 'error' && status.error !== 'cancelled' &&
         <p role="alert" className="notice error">{t.errors[status.error]}</p>}
-      {status.phase === 'complete' && <Results result={status.result} locale={locale} />}
+      {status.phase === 'complete' && <Results result={status.result} locale={locale} onOverride={updateOverride} />}
     </main>
   </>
 }

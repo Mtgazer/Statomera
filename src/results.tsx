@@ -1,3 +1,5 @@
+import { schemaTypes } from './dataset.ts'
+import type { SchemaType } from './dataset.ts'
 import type { AnalysisResult } from './analysis.ts'
 import type { Column, ColumnProfile, RejectedValue } from './dataset.ts'
 import { formatNumber, messages } from './locale.ts'
@@ -47,10 +49,14 @@ function ProfileDetails({ column, locale, salary }: { column: ColumnProfile; loc
   </details>
 }
 
-export function Results({ result, locale }: { result: AnalysisResult; locale: Locale }) {
+export function Results({ result, locale, onOverride }: {
+  result: AnalysisResult
+  locale: Locale
+  onOverride: (id: string, type: SchemaType | 'auto') => void
+}) {
   const t = messages[locale]
   const number = (value: number) => formatNumber(value, locale)
-  const salary = result.columns.find(column => column.id === result.salaryColumnId)
+  const salary = result.columns.find(column => column.id === result.salaryColumnId && column.type === 'numeric')
   const mean = salary?.numeric?.mean ?? null
   const metrics = [
     ['rows', t.rows, result.rows], ['columns', t.columns, result.columns.length],
@@ -85,7 +91,7 @@ export function Results({ result, locale }: { result: AnalysisResult; locale: Lo
       <h2 id="quality-title">{t.profiles}</h2>
       <p className="muted">{t.profileMethod} {t.ignoredMeaning}</p>
       <div className="table-scroll" tabIndex={0} role="region" aria-label={t.profiles}>
-        <table><thead><tr>{[t.column, t.type, t.blanks, t.marked, t.validCells, t.invalidCells, t.details].map(label =>
+        <table><thead><tr>{[t.column, t.type, t.blanks, t.marked, t.validCells, t.invalidCells, t.details, t.schemaOverride].map(label =>
           <th scope="col" key={label}>{label}</th>,
         )}</tr></thead><tbody>{result.columns.map(column =>
           <tr key={column.id}>
@@ -95,6 +101,13 @@ export function Results({ result, locale }: { result: AnalysisResult; locale: Lo
               <td key={index}>{number(count)}</td>,
             )}
             <td><ProfileDetails column={column} locale={locale} salary={column === salary} /></td>
+            <td><select id={`schema-${column.id}`} className="schema-type"
+              aria-label={`${t.schemaOverride} · ${columnLabel(column, locale)}`}
+              value={column.override ?? 'auto'}
+              onChange={event => onOverride(column.id, event.currentTarget.value as SchemaType | 'auto')}>
+              <option value="auto">{t.auto}</option>
+              {schemaTypes.map(type => <option key={type} value={type}>{t.types[type]}</option>)}
+            </select></td>
           </tr>,
         )}</tbody></table>
       </div>

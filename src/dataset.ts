@@ -8,6 +8,7 @@ export interface CsvOptions {
   header: 'first-row' | 'none'
   duplicateHeaders: 'reject' | 'disambiguate'
   missingMarkers: readonly string[]
+  schemaOverrides?: SchemaOverrides
 }
 
 export const defaultCsvOptions: CsvOptions = {
@@ -30,7 +31,10 @@ export interface Dataset {
   records(): Iterable<readonly string[]>
 }
 
-export type ColumnType = 'numeric' | 'text' | 'boolean' | 'date' | 'empty'
+export const schemaTypes = ['text', 'numeric', 'boolean', 'date'] as const
+export type SchemaType = typeof schemaTypes[number]
+export type SchemaOverrides = Readonly<Partial<Record<string, SchemaType>>>
+export type ColumnType = SchemaType | 'empty'
 export type ColumnWarning = 'mixed' | 'dateFormat' | 'leadingZeros' | 'numericRange' | 'manyCategories'
 export interface RejectedValue { record: number; value: string }
 export interface NumericSummary { count: number; mean: number; min: number; max: number; median: number }
@@ -41,6 +45,7 @@ export interface FrequencySummary {
 }
 export interface ColumnProfile extends Column {
   type: ColumnType
+  override: SchemaType | null
   blank: number
   markedMissing: number
   invalid: number

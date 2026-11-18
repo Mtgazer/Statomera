@@ -114,3 +114,20 @@ test('resource and malformed-input gates fail before publishing a profile', () =
   assert.throws(() => profile(columns + '\n' + (row + '\n').repeat(limits.cells / limits.columns + 1)),
     error => error instanceof CsvError && error.code === 'cellLimit')
 })
+
+test('schema overrides reuse strict conversions and preserve raw rejected values', () => {
+  const dataset = normalizeCsv('أجر,enabled,date\n10,صحيح,2024-02-29\n$20,yes,03/04/2024\n1,خطأ,2023-02-29', defaultCsvOptions)
+  const result = profileDataset(dataset, () => false, undefined, {
+    'column-1': 'numeric', 'column-2': 'boolean', 'column-3': 'date',
+  })
+  assert.deepEqual(result.columns.map(column => [column.override, column.valid, column.invalid]), [
+    ['numeric', 2, 1], ['boolean', 2, 1], ['date', 1, 2],
+  ])
+  assert.equal(result.columns[0].numeric?.mean, 5.5)
+  assert.deepEqual(result.columns[2].rejected.map(value => value.value), ['03/04/2024', '2023-02-29'])
+  assert.equal(result.preview[1][0], '$20')
+  const text = profileDataset(dataset, () => false, undefined, { 'column-1': 'text' })
+  assert.equal(text.columns[0].valid, 3)
+  assert.equal(text.columns[0].numeric, null)
+  assert.throws(() => profileDataset(dataset, () => false, undefined, { 'column-4': 'text' }), { code: 'options' })
+})
