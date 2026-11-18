@@ -19,6 +19,8 @@ Hold datasets in volatile storage initially. Reset after cancellation by termina
 
 Phase 3 builds on the same worker-owned passes. The raw-row equality map yields exact repeat counts and a frequency-of-frequencies summary. A bounded bitmask table records co-missingness for blanks and configured markers. The sorted valid numeric buffer serves both the median and the descriptive distribution and IQR check. React receives aggregates, counts and finding codes for localized explanations. See the [Phase 3 methods and limits](PHASE_3_REPORT.md#methods-and-result-contract).
 
+Phase 4A uses the same short-lived parser worker for on-demand descriptive statistics. A fixed operation and positional column IDs are validated against the inferred or overridden schema from the same file and options. Exact binary64 accumulators and complete-pair eligibility yield one bounded result and its provenance. The worker loads the computation module on demand. See the [Phase 4A methods and evidence](PHASE_4A_REPORT.md).
+
 ## Candidate comparison
 
 Primary references reviewed 2026-11-18. Package licenses are indicative for the named project, with pinned dependency, font and model terms to be verified before adoption. Device and performance judgments are design estimates.
