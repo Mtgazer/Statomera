@@ -19,6 +19,7 @@ Open the loopback address printed by Vite and choose `tests/fixtures/salary.csv`
 
 ## Project documentation
 
+- [Phase 2D data workspace](docs/PHASE_2D_REPORT.md)
 - [Phase 2C format support and verification](docs/PHASE_2C_REPORT.md)
 - [Phase 2A profiler and verification](docs/PHASE_2A_REPORT.md)
 - [Phase 1B build and deployment measurements](docs/PHASE_1B_REPORT.md)
