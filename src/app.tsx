@@ -1,11 +1,11 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { AnalysisError, analyzeFile, analyzeInference, analyzeStatistic } from './analysis.ts'
 import type { AnalysisErrorCode, AnalysisResult } from './analysis.ts'
 import { formatNumber, messages } from './locale.ts'
 import type { Locale } from './locale.ts'
 import { commonMissingMarkers, defaultCsvOptions } from './dataset.ts'
 import { ConversationPanel } from './conversation/panel.tsx'
-import type { DatasetRevision, DatasetSession } from './dataset-session.ts'
+import type { DatasetSession } from './dataset-session.ts'
 import type { CsvOptions, SchemaType } from './dataset.ts'
 import type { RunInference } from './inference-panel.tsx'
 import type { RunStatistic } from './statistics-panel.tsx'
@@ -16,12 +16,12 @@ type Status =
   | { phase: 'idle' }
   | { phase: 'busy' }
   | { phase: 'error'; error: AnalysisErrorCode }
-  | { phase: 'complete'; result: AnalysisResult; revision: DatasetRevision }
 
-export function App({ session }: { session: DatasetSession }) {
+export function App({ session }: { session: DatasetSession<AnalysisResult> }) {
   const [locale, setLocale] = useState<Locale>('en')
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
   const [status, setStatus] = useState<Status>({ phase: 'idle' })
+  const active = useSyncExternalStore(session.subscribe, session.active)
   const [workbook, setWorkbook] = useState<AnalysisResult['workbook']>()
   const [options, setOptions] = useState(defaultCsvOptions)
   const [fileInfo, setFileInfo] = useState<{ name: string; size: number }>()
@@ -47,12 +47,12 @@ export function App({ session }: { session: DatasetSession }) {
   useLayoutEffect(() => {
     if (!overrideFocus.current) return
     if (status.phase === 'busy') cancelButton.current?.focus()
-    if (status.phase === 'complete') {
+    if (active) {
       if (document.activeElement === document.body) document.getElementById(`schema-${overrideFocus.current}`)?.focus()
       overrideFocus.current = null
     }
     if (status.phase === 'error' && document.activeElement === document.body) retryButton.current?.focus()
-  }, [status])
+  }, [active, status])
 
   function updateOverride(id: string, type: SchemaType | 'auto') {
     const current = session.selection()
@@ -92,7 +92,7 @@ export function App({ session }: { session: DatasetSession }) {
       performance.measure('askora:analysis', {
         start: startTime, end: performance.now(), detail: result.timings,
       })
-      setStatus({ phase: 'complete', result, revision: selection.revision })
+      setStatus({ phase: 'idle' })
     } catch (error) {
       if (job.current !== controller) return
       setStatus({ phase: 'error', error: error instanceof AnalysisError ? error.code : 'engine' })
@@ -170,9 +170,9 @@ export function App({ session }: { session: DatasetSession }) {
           </div>
         </details>
         <div className="file-status">
-          {fileInfo && status.phase !== 'complete' && <p className="file-info"><bdi>{fileInfo.name}</bdi>
+          {fileInfo && status.phase !== 'idle' && !active && <p className="file-info"><bdi>{fileInfo.name}</bdi>
             <bdi className="muted">{formatNumber(fileInfo.size, locale)} {t.bytes}</bdi></p>}
-          {workbook && <label className="worksheet-select">{t.worksheet}
+          {workbook && (active || status.phase !== 'idle') && <label className="worksheet-select">{t.worksheet}
             <select disabled={status.phase === 'busy'} value={workbook.selected} onChange={event => {
               const current = session.selection()
               if (current) {
@@ -189,13 +189,13 @@ export function App({ session }: { session: DatasetSession }) {
       </section>
       <div role="status" aria-atomic="true">
         {status.phase === 'busy' && <p className="notice">{t.busy}</p>}
-        {status.phase === 'complete' && <span className="sr-only">{t.summary}</span>}
+        {active && <span className="sr-only">{t.summary}</span>}
         {status.phase === 'error' && status.error === 'cancelled' && <p className="notice">{t.errors.cancelled}</p>}
       </div>
       {status.phase === 'error' && status.error !== 'cancelled' &&
         <p role="alert" className="notice error">{t.errors[status.error]}</p>}
-      {status.phase === 'complete' && <Results result={status.result} locale={locale} filename={fileInfo?.name ?? ''} onOverride={updateOverride} onStatistic={runStatistic} onInference={runInference}
-        conversation={<ConversationPanel key={status.revision.ordinal} session={session} revision={status.revision} locale={locale} />} />}
+      {active && <Results result={active.profile} locale={locale} filename={active.file.name} onOverride={updateOverride} onStatistic={runStatistic} onInference={runInference}
+        conversation={<ConversationPanel key={active.revision.ordinal} session={session} revision={active.revision} locale={locale} />} />}
     </main>
   </>
 }

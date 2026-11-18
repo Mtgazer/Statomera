@@ -24,6 +24,7 @@ export function ConversationPanel({ session, revision, locale }: {
   const input = useRef<HTMLTextAreaElement>(null)
   const transcript = useRef<HTMLOListElement>(null)
   const t = conversationCopy[locale]
+  const overLimit = draft.length > questionLimit
 
   useLayoutEffect(() => () => {
     active.current?.abort()
@@ -92,17 +93,20 @@ export function ConversationPanel({ session, revision, locale }: {
       </ol>}
     <form className="conversation-form" onSubmit={event => { event.preventDefault(); void submit(draft) }}>
       <label htmlFor="conversation-question">{t.label}</label>
-      <textarea ref={input} id="conversation-question" rows={2} dir="auto" value={draft} maxLength={questionLimit}
-        placeholder={t.example} aria-describedby="conversation-keys" onChange={event => setDraft(event.currentTarget.value)}
+      <textarea ref={input} id="conversation-question" rows={2} dir="auto" value={draft} maxLength={questionLimit + 1}
+        placeholder={t.example} aria-invalid={overLimit || undefined}
+        aria-describedby={overLimit ? 'conversation-keys conversation-limit' : 'conversation-keys'}
+        onChange={event => setDraft(event.currentTarget.value.slice(0, questionLimit + 1))}
         onKeyDown={event => {
           if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) return
           event.preventDefault()
           void submit(draft)
         }} />
+      {overLimit && <p id="conversation-limit" className="muted">{t.refusal.tooLong}</p>}
       <div className="conversation-actions">
         <span id="conversation-keys" className="muted">{t.keys}</span>
         {busy && <button type="button" onClick={() => { active.current?.abort(); input.current?.focus() }}>{t.cancel}</button>}
-        <button className="primary" type="submit" disabled={busy || !draft.trim()}>{t.send}</button>
+        <button className="primary" type="submit" disabled={busy || overLimit || !draft.trim()}>{t.send}</button>
       </div>
     </form>
     <p className="sr-only" aria-live="polite" aria-atomic="true">

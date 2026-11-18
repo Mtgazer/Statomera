@@ -10,20 +10,28 @@ type Selection = Readonly<{
   signal: AbortSignal
 }>
 
-export type ActiveDataset = Selection & { readonly profile: DatasetProfile }
+export type ActiveDataset<Profile extends DatasetProfile = DatasetProfile> = Selection & { readonly profile: Profile }
 
-export function createDatasetSession() {
+export function createDatasetSession<Profile extends DatasetProfile = DatasetProfile>() {
   let ordinal = 0
   let selected: Selection | null = null
-  let active: ActiveDataset | null = null
+  let active: ActiveDataset<Profile> | null = null
   let lifetime: AbortController | null = null
 
+  const listeners = new Set<() => void>()
+
+  function notify() {
+    for (const listener of listeners) listener()
+  }
+
   function clear() {
+    const hadActive = active !== null
     selected = null
     active = null
     const previous = lifetime
     lifetime = null
     previous?.abort()
+    if (hadActive) notify()
   }
 
   return {
@@ -40,16 +48,21 @@ export function createDatasetSession() {
       })
       return selected
     },
-    publish(selection: Selection, profile: DatasetProfile): boolean {
+    publish(selection: Selection, profile: Profile): boolean {
       // Each revision can publish exactly one verified profile.
       if (selected !== selection || active) return false
       active = Object.freeze({ ...selection, profile })
+      notify()
       return true
     },
     selection: () => selected,
     active: () => active,
+    subscribe(listener: () => void) {
+      listeners.add(listener)
+      return () => { listeners.delete(listener) }
+    },
     clear,
   }
 }
 
-export type DatasetSession = ReturnType<typeof createDatasetSession>
+export type DatasetSession<Profile extends DatasetProfile = DatasetProfile> = ReturnType<typeof createDatasetSession<Profile>>
