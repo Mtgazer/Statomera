@@ -93,7 +93,7 @@ export const messages = {
     uncertainHelp: 'Open column details to see type and interpretation warnings.',
     distinctValues: 'Unique valid values', distinctCap: (limit: string) => `More than ${limit}`,
     scrollHint: 'Scroll the table to see more columns.',
-    previewScope: 'Search, filtering and sorting apply to the first eight records.',
+    previewScope: 'Search, filtering and sorting apply only to the first eight records.',
     previewSearch: 'Search preview', previewFilter: 'Filter preview', previewSort: 'Sort selected column',
     selectedColumn: 'Selected column', allRows: 'All preview rows', withMissing: 'Rows with missing cells',
     withInvalid: 'Rows with invalid cells', sourceOrder: 'Source order', ascending: 'A–Z', descending: 'Z–A',
@@ -147,7 +147,7 @@ export const messages = {
     uncertainHelp: 'افتح تفاصيل العمود للاطلاع على تنبيهات النوع والتفسير.',
     distinctValues: 'القيم الصالحة المميزة', distinctCap: (limit: string) => `أكثر من ${limit}`,
     scrollHint: 'مرّر الجدول أفقيًا لعرض المزيد من الأعمدة.',
-    previewScope: 'ينطبق البحث والتصفية والفرز على السجلات الثمانية الأولى.',
+    previewScope: 'ينطبق البحث والتصفية والفرز على السجلات الثمانية الأولى فقط.',
     previewSearch: 'ابحث في المعاينة', previewFilter: 'صفِّ المعاينة', previewSort: 'افرز العمود المحدد',
     selectedColumn: 'العمود المحدد', allRows: 'جميع صفوف المعاينة', withMissing: 'صفوف فيها قيم مفقودة',
     withInvalid: 'صفوف فيها قيم غير صالحة', sourceOrder: 'ترتيب المصدر', ascending: 'تصاعدي', descending: 'تنازلي',
@@ -163,8 +163,8 @@ export const messages = {
   },
 } as const
 
-export function formatNumber(value: number, locale: Locale): string {
-  const options: Intl.NumberFormatOptions = { maximumSignificantDigits: 12 }
+export function formatNumber(value: number, locale: Locale, maximumSignificantDigits = 12): string {
+  const options: Intl.NumberFormatOptions = { maximumSignificantDigits }
   if (Math.abs(value) >= 1e12 || (value !== 0 && Math.abs(value) < 1e-6)) {
     options.notation = 'scientific'
   }

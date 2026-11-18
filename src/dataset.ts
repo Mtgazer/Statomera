@@ -1,3 +1,5 @@
+import type { NumericQuality, QualityFinding } from './quality.ts'
+
 export const delimiters = [',', ';', '\t'] as const
 export type Delimiter = typeof delimiters[number]
 
@@ -64,6 +66,9 @@ export interface ColumnProfile extends Column {
   warnings: ColumnWarning[]
   numeric: NumericSummary | null
   frequency: FrequencySummary | null
+  missingRate: number | null
+  distribution: NumericQuality | null
+  findings: QualityFinding[]
 }
 
 export interface DatasetProfile {
@@ -72,6 +77,12 @@ export interface DatasetProfile {
   preview: (readonly string[])[]
   previewQuality: CellQuality[][]
   duplicateRows: number
+  duplicateFrequency: { groups: number; entries: { occurrences: number; groups: number }[] }
+  missingPatterns: {
+    complete: number
+    entries: { columns: number[]; count: number }[]
+    other: number
+  }
   salaryColumnId: string | null
   workbook?: { names: string[]; selected: number }
 }

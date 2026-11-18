@@ -4,6 +4,7 @@ import type { ColumnProfile, ColumnWarning, Dataset, DatasetProfile, SchemaOverr
 import { classify, inferType } from './infer.ts'
 import type { Evidence, TypedValue } from './infer.ts'
 import { normalizedLabel } from './normalize.ts'
+import { columnFindings, describeNumbers, displayedPatterns, patternLimit } from './quality.ts'
 import { summarizeFrequencies, summarizeNumbers } from './summaries.ts'
 
 function sourceText(cell: SourceCell) {
@@ -44,16 +45,19 @@ export function profileDataset(
   const preview: DatasetProfile['preview'] = []
   let rows = 0
   let duplicateRows = 0
+  let duplicateGroups = 0
+  const duplicateCounts = new Map<number, number>()
 
   // Keys represent entire raw rows, preserving cell boundaries and source spelling.
   {
-    const seen = new Set<string>()
+    const seen = new Map<string, number>()
     for (const row of dataset.records()) {
       rows++
       if (preview.length < limits.preview) preview.push(row.map(sourceText))
       const key = JSON.stringify(row)
-      if (seen.has(key)) duplicateRows++
-      else seen.add(key)
+      const previous = seen.get(key) ?? 0
+      if (previous) duplicateRows++
+      seen.set(key, previous + 1)
 
       row.forEach((raw, index) => {
         const column = state[index]
@@ -71,6 +75,11 @@ export function profileDataset(
         }
       })
     }
+    for (const count of seen.values()) {
+      if (count === 1) continue
+      duplicateGroups++
+      duplicateCounts.set(count, (duplicateCounts.get(count) ?? 0) + 1)
+    }
     seen.clear()
   }
 
@@ -82,7 +91,8 @@ export function profileDataset(
     const type = override ?? inferredType
     if (Object.values(evidence).filter(count => count > 0).length > 1) warnings.add('mixed')
     return { ...column, type, inferredType, distinct: 0, override, blank, markedMissing, invalid: 0, valid: 0, rejected: [],
-      warnings: [...warnings], numeric: null, frequency: null }
+      warnings: [...warnings], numeric: null, frequency: null,
+      missingRate: rows ? (blank + markedMissing) / rows : null, distribution: null, findings: [] }
   })
   // The first pass already counted every admissible numeric value. Pack only those
   // values for the exact median and avoid dynamic array capacity and boxing.
@@ -90,14 +100,19 @@ export function profileDataset(
     ? new Float64Array(state[index].admissibleNumbers) : null)
   const frequencies: (Map<string, number> | null)[] = columns.map(() => new Map())
 
+  const patterns = new Map<number, number>()
+  let complete = 0
+  let other = 0
   let record = 0
   for (const row of dataset.records()) {
     record++
     const quality: DatasetProfile['previewQuality'][number] | undefined = record <= preview.length ? [] : undefined
     if (quality) previewQuality.push(quality)
+    let missingMask = 0
     row.forEach((raw, index) => {
       const value = sourceText(raw).trim()
       if (!value || isMarker(value)) {
+        missingMask |= 1 << index // Import limits allow at most 32 columns.
         quality?.push(value ? 'marked' : 'blank')
         return
       }
@@ -125,17 +140,38 @@ export function profileDataset(
         }
       }
     })
+    if (!missingMask) complete++
+    else if (patterns.has(missingMask) || patterns.size < patternLimit) {
+      patterns.set(missingMask, (patterns.get(missingMask) ?? 0) + 1)
+    } else other++
   }
 
   columns.forEach((column, index) => {
     const values = numbers[index]
     const counts = frequencies[index]
-    if (values) column.numeric = summarizeNumbers(values)
+    if (values?.length) {
+      column.numeric = summarizeNumbers(values)
+      column.distribution = describeNumbers(values)
+    }
     column.distinct = counts?.size ?? null
     if (counts && (column.type === 'text' || column.type === 'boolean')) {
       column.frequency = summarizeFrequencies(counts)
     }
+    column.findings = columnFindings(column, column.missingRate, counts)
   })
 
-  return { rows, columns, preview, previewQuality, duplicateRows, salaryColumnId }
+  const ranked = [...patterns].sort(([leftMask, left], [rightMask, right]) =>
+    right - left || (leftMask >>> 0) - (rightMask >>> 0))
+  for (const [, count] of ranked.slice(displayedPatterns)) other += count
+  const entries = ranked.slice(0, displayedPatterns).map(([mask, count]) => ({
+    columns: columns.filter(column => mask & (1 << column.index)).map(column => column.index),
+    count,
+  }))
+  const duplicateFrequency = {
+    groups: duplicateGroups,
+    entries: [...duplicateCounts].sort(([left], [right]) => left - right)
+      .map(([occurrences, groups]) => ({ occurrences, groups })),
+  }
+  return { rows, columns, preview, previewQuality, duplicateRows, duplicateFrequency,
+    missingPatterns: { complete, entries, other }, salaryColumnId }
 }

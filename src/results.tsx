@@ -7,6 +7,7 @@ import { formatNumber, messages } from './locale.ts'
 import type { Locale } from './locale.ts'
 
 import { columnLabel } from './column-label.ts'
+import { ColumnQuality, QualityReports } from './quality-results.tsx'
 import { Preview } from './preview.tsx'
 
 function Rejected({ values, locale, title }: { values: RejectedValue[]; locale: Locale; title: string }) {
@@ -19,8 +20,8 @@ function Rejected({ values, locale, title }: { values: RejectedValue[]; locale: 
   </>
 }
 
-function ProfileDetails({ column, locale, salary, open, onToggle }: {
-  column: ColumnProfile; locale: Locale; salary: boolean; open: boolean; onToggle: () => void
+function ProfileDetails({ column, rows, locale, salary, open, onToggle }: {
+  column: ColumnProfile; rows: number; locale: Locale; salary: boolean; open: boolean; onToggle: () => void
 }) {
   const t = messages[locale]
   const number = (value: number) => formatNumber(value, locale)
@@ -47,6 +48,7 @@ function ProfileDetails({ column, locale, salary, open, onToggle }: {
         </table>
         {frequency.omitted > 0 && <p className="muted">{t.otherCategories} {number(frequency.omitted)}</p>}
     </>}
+    <ColumnQuality column={column} rows={rows} locale={locale} />
     {!salary && <Rejected values={rejected} locale={locale} title={t.invalidExamples} />}
     </>}
   </details>
@@ -127,6 +129,7 @@ export function Results({ result, locale, filename, onOverride }: {
         )}
       </div>
       <p className="muted quality-context">{t.ignoredMeaning}</p>
+      <QualityReports result={result} locale={locale} />
     </section>
     <section id="column-explorer" aria-labelledby="explorer-title" className="panel workspace-section">
       <h2 id="explorer-title">{t.explorer}</h2>
@@ -142,7 +145,7 @@ export function Results({ result, locale, filename, onOverride }: {
             {[column.blank, column.markedMissing, column.valid, column.invalid].map((count, index) =>
               <td role="cell" key={index} data-label={[t.blanks, t.marked, t.validCells, t.invalidCells][index]}>{number(count)}</td>,
             )}
-            <td role="cell"><ProfileDetails column={column} locale={locale} salary={column === salary}
+            <td role="cell"><ProfileDetails column={column} rows={result.rows} locale={locale} salary={column === salary}
               open={opened.includes(column.id)}
               onToggle={() => {
                 setSelected(column.id)

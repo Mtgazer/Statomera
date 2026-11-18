@@ -179,3 +179,10 @@ td[data-selected], tr[data-selected] > th { background: var(--selection); }
   .explorer-table .column-details { min-inline-size: 0; }
   .explorer-table .schema-type { inline-size: 100%; max-inline-size: 100%; }
 }
+
+.quality-reports details { border-block-start: 1px solid var(--border); padding-block: .65rem; }
+.quality-reports summary { cursor: pointer; font-weight: 650; }
+.quality-reports th, .quality-reports td { overflow-wrap: anywhere; }
+.quality-reports table { margin-block-start: .65rem; }
+.duplicate-frequencies { max-block-size: 18rem; }
+.quality-findings { padding-inline-start: 1.2rem; }
