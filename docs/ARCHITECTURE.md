@@ -25,6 +25,8 @@ Phase 4B adds on-demand Student t inference to the same local worker path. Eligi
 
 Phase 4C renders local SVG charts from verified column and inference profiles. Pearson results include bounded complete-pair points or an all-pair density grid. The parser worker performs the grid aggregation. React maps values into plot coordinates and exposes equivalent numeric displays. See the [Phase 4C conventions and verification](PHASE_4C_REPORT.md).
 
+Phase 5A adds an isolated bilingual question parser. It accepts only question text and projected column metadata, returning a resolved intent, clarification, or unsupported reason. The parser has no connection to analysis execution or the workspace at this checkpoint. See the [Phase 5A contract and verification](PHASE_5A_REPORT.md).
+
 ## Candidate comparison
 
 Primary references reviewed 2026-11-18. Package licenses are indicative for the named project, with pinned dependency, font and model terms to be verified before adoption. Device and performance judgments are design estimates.
