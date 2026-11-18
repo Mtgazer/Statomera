@@ -31,6 +31,8 @@ Phase 5B binds prepared questions to the active in-memory dataset revision, vali
 
 Phase 5C mounts a localized conversation panel for the published dataset revision. It renders structured evidence from Phase 5B using shared evidence components. The panel owns a bounded in-memory transcript and aborts pending work when its revision is retired or the transcript is cleared. See the [Phase 5C report](PHASE_5C_REPORT.md).
 
+Phase 5D binds workspace rendering to the session’s published snapshot. Clearing a dataset unmounts the result panels and aborts the current conversation. The composer rejects oversized questions before submission. See the [Phase 5D report](PHASE_5D_REPORT.md).
+
 ## Candidate comparison
 
 Primary references reviewed 2026-11-18. Package licenses are indicative for the named project, with pinned dependency, font and model terms to be verified before adoption. Device and performance judgments are design estimates.
