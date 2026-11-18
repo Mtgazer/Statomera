@@ -1,6 +1,10 @@
+import { delimiters } from './dataset.ts'
+import type { Delimiter } from './dataset.ts'
+
 export const limits = {
   bytes: 5 * 1024 * 1024,
   rows: 100_000,
+  cells: 1_000_000,
   columns: 32,
   field: 4096,
   preview: 8,
@@ -10,7 +14,7 @@ export const limits = {
 
 export const inputErrors = [
   'fileType', 'empty', 'fileSize', 'encoding', 'structure', 'rowWidth',
-  'rowLimit', 'columnLimit', 'fieldLimit', 'headers', 'salaryColumn',
+  'rowLimit', 'columnLimit', 'fieldLimit', 'cellLimit', 'headers', 'delimiter', 'options',
 ] as const
 
 export type InputError = typeof inputErrors[number]
@@ -38,8 +42,8 @@ export function decodeCsv(bytes: ArrayBuffer): string {
   }
 }
 
-// Strict comma-separated records with RFC-style quoted fields and doubled quotes.
-function* records(text: string): Generator<string[]> {
+// Strict delimited records with quoted fields and doubled quotes.
+export function* readRecords(text: string, separator: Delimiter): Generator<string[]> {
   let offset = text.charCodeAt(0) === 0xfeff ? 1 : 0
   let row: string[] = []
 
@@ -59,7 +63,7 @@ function* records(text: string): Generator<string[]> {
       }
     } else {
       const start = offset
-      while (offset < text.length && !',\r\n'.includes(text[offset])) {
+      while (offset < text.length && text[offset] !== separator && text[offset] !== '\r' && text[offset] !== '\n') {
         if (text[offset] === '"') throw new CsvError('structure')
         if (offset - start >= limits.field) throw new CsvError('fieldLimit')
         offset++
@@ -72,7 +76,7 @@ function* records(text: string): Generator<string[]> {
     if (row.length > limits.columns) throw new CsvError('columnLimit')
 
     const delimiter = text[offset++]
-    if (delimiter === ',') continue
+    if (delimiter === separator) continue
     if (delimiter === '\r' && text[offset] === '\n') offset++
     if (delimiter !== undefined && delimiter !== '\r' && delimiter !== '\n') {
       throw new CsvError('structure')
@@ -82,66 +86,17 @@ function* records(text: string): Generator<string[]> {
   }
 }
 
-const salaryNames = new Set(['salary', 'راتب', 'الراتب'])
-const decimal = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i
-
-function numericValue(value: string): number | null {
-  if (!decimal.test(value)) return null
-  const number = Number(value)
-  if (!Number.isFinite(number)) return null
-  if (number === 0 && /[1-9]/.test(value.split(/[eE]/, 1)[0])) return null
-  return number
-}
-
-export function profileCsv(text: string, collectNumber?: (value: number) => void) {
-  const iterator = records(text)
-  const first = iterator.next()
-  if (first.done || !text.trim()) throw new CsvError('empty')
-  const headers = first.value
-  const names = headers.map(header => header.trim().normalize('NFC').toLowerCase())
-  if (names.some(name => !name) || new Set(names).size !== names.length) {
-    throw new CsvError('headers')
-  }
-  const salaryIndices = names.flatMap((name, index) => salaryNames.has(name) ? [index] : [])
-  if (salaryIndices.length !== 1) throw new CsvError('salaryColumn')
-  const [salaryIndex] = salaryIndices
-
-  const missing = headers.map(() => 0)
-  const preview: string[][] = []
-  const rejected: { record: number; value: string }[] = []
-  const observations: string[] = []
-  let rows = 0
-  let invalid = 0
-  let valid = 0
-
-  for (const row of iterator) {
-    rows++
-    if (rows > limits.rows) throw new CsvError('rowLimit')
-    if (row.length !== headers.length) throw new CsvError('rowWidth')
-    if (preview.length < limits.preview) preview.push(row)
-
-    row.forEach((field, index) => {
-      if (!field.trim()) missing[index]++
-    })
-
-    const raw = row[salaryIndex]
-    const value = raw.trim()
-    if (!value) continue
-    const number = numericValue(value)
-    if (number !== null) {
-      valid++
-      if (collectNumber) collectNumber(number)
-      else observations.push(String(number))
-      continue
+/** Suggest a delimiter only when the first logical record gives unambiguous evidence. */
+export function detectDelimiter(text: string): Delimiter {
+  const candidates: Delimiter[] = []
+  for (const delimiter of delimiters) {
+    try {
+      const first = readRecords(text, delimiter).next()
+      if (!first.done && first.value.length > 1) candidates.push(delimiter)
+    } catch (error) {
+      if (!(error instanceof CsvError)) throw error
     }
-    invalid++
-    if (rejected.length < limits.rejected) rejected.push({ record: rows, value: raw })
   }
-
-  return {
-    profile: { headers, missing, rows, preview, salaryIndex, valid, invalid, rejected },
-    numericCsv: observations.join('\n'),
-  }
+  if (candidates.length > 1) throw new CsvError('delimiter')
+  return candidates[0] ?? ','
 }
-
-export type Profile = ReturnType<typeof profileCsv>['profile']

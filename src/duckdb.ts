@@ -1,7 +1,7 @@
 import { AsyncDuckDB, DuckDBAccessMode, VoidLogger } from '@duckdb/duckdb-wasm'
 import wasmUrl from '@duckdb/duckdb-wasm/dist/duckdb-mvp.wasm?url'
 import engineUrl from '@duckdb/duckdb-wasm/dist/duckdb-browser-mvp.worker.js?url'
-import type { AnalysisResult, ParserReply } from './analysis.ts'
+import type { AnalysisResult } from './analysis.ts'
 
 const observationsFile = 'observations.csv'
 
@@ -24,7 +24,8 @@ const meanQuery = `
 `
 
 export function startDuckDb(
-  { profile, numericCsv, parseMs }: Extract<ParserReply, { numericCsv: string }>,
+  profile: AnalysisResult,
+  { numericCsv, count }: { numericCsv: string; count: number },
   onError: () => void,
 ) {
   const start = performance.now()
@@ -47,12 +48,14 @@ export function startDuckDb(
     const table = await connection.query(meanQuery)
     const row = table.get(0)
     const mean = row?.mean
-    if (Number(row?.valid) !== profile.valid || typeof mean !== 'number' || !Number.isFinite(mean)) {
+    if (Number(row?.valid) !== count || typeof mean !== 'number' || !Number.isFinite(mean)) {
       throw new Error('Unexpected engine result')
     }
     const queryMs = performance.now() - queryStart
     await connection.close()
     await db.dropFile(observationsFile)
-    return { ...profile, mean, timings: { parseMs, engineMs, queryMs } }
+    return { ...profile, referenceSalaryMean: mean, timings: {
+      parseMs: profile.timings.parseMs, engineMs, queryMs: profile.timings.queryMs + queryMs,
+    } }
   }
 }

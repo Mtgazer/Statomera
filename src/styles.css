@@ -80,3 +80,15 @@ td bdi, th bdi { display: inline-block; min-inline-size: 4rem; max-inline-size: 
   .intake { grid-template-columns: minmax(0, 1fr); }
   .topbar-inner { align-items: start; }
 }
+
+.import-options { grid-column: 1 / -1; }
+.import-fields { display: flex; flex-wrap: wrap; gap: .5rem 1rem; margin-block-start: .5rem; }
+.import-fields label { display: flex; align-items: center; gap: .5rem; }
+.import-fields input { accent-color: var(--gold); }
+summary { cursor: pointer; }
+.column-details { min-inline-size: 8rem; }
+.column-details[open] { min-inline-size: 12rem; }
+.column-details table { margin-block-start: .5rem; }
+.profile-statistics { margin-block: .5rem 0; }
+.profile-statistics div { display: flex; justify-content: space-between; gap: .75rem; }
+.profile-statistics dd { margin: 0; font-variant-numeric: tabular-nums; }

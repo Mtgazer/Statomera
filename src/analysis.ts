@@ -1,5 +1,7 @@
 import { CsvError, limits, validateFile } from './csv.ts'
-import type { InputError, Profile } from './csv.ts'
+import type { InputError } from './csv.ts'
+import { defaultCsvOptions } from './dataset.ts'
+import type { CsvOptions, DatasetProfile } from './dataset.ts'
 
 export type AnalysisErrorCode = InputError | 'read' | 'engine' | 'timeout' | 'cancelled'
 
@@ -13,16 +15,17 @@ export class AnalysisError extends Error {
 }
 
 export type ParserReply =
-  | { ok: true; profile: Profile; numericCsv: string; parseMs: number }
-  | { ok: true; result: AnalysisResult }
+  | { ok: true; result: AnalysisResult; reference?: { numericCsv: string; count: number } }
   | { ok: false; error: InputError | 'read' }
 
-export type AnalysisResult = Profile & {
-  mean: number | null
+export interface ParseRequest { file: File; options: CsvOptions }
+
+export type AnalysisResult = DatasetProfile & {
+  referenceSalaryMean?: number
   timings: { parseMs: number; engineMs: number; queryMs: number }
 }
 
-export function analyzeFile(file: File, signal: AbortSignal): Promise<AnalysisResult> {
+export function analyzeFile(file: File, signal: AbortSignal, options = defaultCsvOptions): Promise<AnalysisResult> {
   return new Promise((resolve, reject) => {
     let worker: Worker | undefined
     let finished = false
@@ -71,29 +74,21 @@ export function analyzeFile(file: File, signal: AbortSignal): Promise<AnalysisRe
           fail(data.error)
           return
         }
-        if ('result' in data) {
-          succeed(data.result)
-          return
-        }
-        if (import.meta.env.MODE !== 'portable') {
-          if (data.profile.valid === 0) {
-            succeed({ ...data.profile, mean: null, timings: { parseMs: data.parseMs, engineMs: 0, queryMs: 0 } })
-            return
-          }
+        if (import.meta.env.MODE !== 'portable' && data.reference?.count) {
           try {
             const { startDuckDb } = await import('./duckdb.ts')
             if (finished) return
-            const engine = startDuckDb(data, () => fail('engine'))
+            const engine = startDuckDb(data.result, data.reference, () => fail('engine'))
             worker = engine.worker
             succeed(await engine.result)
           } catch {
             fail('engine')
           }
-        } else {
-          fail('engine')
+          return
         }
+        succeed(data.result)
       }
-      worker.postMessage(file)
+      worker.postMessage({ file, options } satisfies ParseRequest)
     } catch (error) {
       fail(error instanceof CsvError ? error.code : 'read')
     }

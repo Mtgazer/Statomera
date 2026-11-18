@@ -24,6 +24,7 @@ test('local picker flow, identical bilingual results and theme switch on a narro
   await page.keyboard.press('Enter')
   await (await selection).setFiles(fixture)
   await expect(page.getByTestId('mean')).toHaveText('20')
+  if (!portable) await expect(page.getByTestId('mean')).toHaveAttribute('data-reference-mean', '20')
   for (const [metric, count] of Object.entries({ rows: '5', columns: '2', valid: '3', blank: '1', invalid: '1' })) {
     await expect(page.getByTestId(metric)).toHaveText(count)
   }
@@ -46,11 +47,10 @@ test('local picker flow, identical bilingual results and theme switch on a narro
   await expect(page.getByTestId('mean')).toHaveText('20')
 })
 
-test('malformed, missing-column, empty, invalid-encoding and over-limit inputs recover', async ({ page }) => {
+test('malformed, empty, invalid-encoding and over-limit inputs recover', async ({ page }) => {
   await page.goto('/')
   for (const [contents, message, name] of [
     ['', 'The file is empty.'],
-    ['name\nAmal', /Include one salary column/],
     ['employee,salary\nAmal', /different number of fields/],
     ['employee,salary\n"Amal,20', /unmatched quotes/],
     ['salary,salary\n1,2', /unique/],
@@ -63,7 +63,7 @@ test('malformed, missing-column, empty, invalid-encoding and over-limit inputs r
   }
   await upload(page, 'موظف,الراتب\n"نور, حسن",10\nمريم,30\nعمر,NA\nآمال,')
   await expect(page.getByTestId('mean')).toHaveText('20')
-  await expect(page.getByText('نور, حسن')).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Dataset preview' }).getByText('نور, حسن')).toBeVisible()
   await expect(page.getByTestId('invalid')).toHaveText('1')
   await expect(page.getByTestId('blank')).toHaveText('1')
 })
@@ -162,7 +162,7 @@ test('local-only requests, inert cell rendering, no storage and bounded performa
   expect(await response?.headerValue('content-security-policy')).toContain("worker-src 'self'")
   const cell = '<em>LocalOnlyCell</em>'
   await upload(page, `employee,salary\n"${cell}",5\n`)
-  await expect(page.getByText(cell, { exact: true })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Dataset preview' }).getByText(cell, { exact: true })).toBeVisible()
   await expect(page.locator('em')).toHaveCount(0)
   await expect(page.getByTestId('mean')).toHaveText('5')
 
@@ -274,4 +274,74 @@ test('near-limit input returns the reference mean and retires every worker', asy
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(360)
   console.log(JSON.stringify({ mode, browserName, rows: 100000, bytes: data.length,
     cpuThrottle: portable && browserName === 'chromium' ? 4 : 1, ...stats }))
+})
+
+test('generic profiles expose quality counts and localized numeric and categorical summaries', async ({ page }) => {
+  await page.goto('/')
+  await page.getByText('Import options', { exact: true }).click()
+  await page.getByRole('checkbox', { name: 'Treat NA, N/A, NULL and NaN as missing' }).check()
+  await page.locator('input[type=file]').setInputFiles(fileURLToPath(new URL('../fixtures/mixed.csv', import.meta.url)))
+  await expect(page.getByTestId('rows')).toHaveText('8')
+  await expect(page.getByTestId('columns')).toHaveText('5')
+  await expect(page.getByTestId('duplicate-rows')).toHaveText('1')
+  await expect(page.getByTestId('mean')).toHaveCount(0)
+  const profiles = page.getByRole('region', { name: 'Column profiles' })
+  const column = (name: string) => profiles.getByRole('row').filter({ has: page.getByRole('rowheader', { name, exact: true }) }).first()
+  const amount = column('amount')
+  const cells = amount.getByRole('cell')
+  for (const [index, text] of ['Number', '1', '1', '5', '1'].entries()) {
+    await expect(cells.nth(index)).toHaveText(text)
+  }
+  await amount.getByText('Details', { exact: true }).click()
+  await expect(amount.locator('dl')).toHaveText('Count5Mean22Minimum10Maximum40Median20')
+  await expect(amount.getByRole('listitem')).toHaveText('Record 4 bad')
+  const group = column('group')
+  await group.getByText('Details', { exact: true }).click()
+  await expect(group.getByRole('table', { name: 'Most frequent values' })).toContainText('جنوب5')
+  const date = column('day')
+  await expect(date.getByText('ISO date')).toBeVisible()
+  await date.getByText('Details', { exact: true }).click()
+  await expect(date.getByText(/date-like values are ambiguous/)).toBeVisible()
+
+  await page.getByLabel('Language').selectOption('ar')
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
+  await expect(page.getByRole('region', { name: 'ملفات تعريف الأعمدة' }).getByText('الوسيط', { exact: true })).toBeVisible()
+  await expect(page.getByTestId('duplicate-rows')).toHaveText('١')
+})
+
+test('import options recover duplicate headers and read a headerless file', async ({ page }) => {
+  await page.goto('/')
+  const duplicate = fileURLToPath(new URL('../fixtures/duplicate-headers.csv', import.meta.url))
+  await page.locator('input[type=file]').setInputFiles(duplicate)
+  await expect(page.getByRole('alert')).toHaveText(/unique/)
+  await page.getByText('Import options', { exact: true }).click()
+  await page.getByRole('checkbox', { name: /Keep duplicate headers/ }).check()
+  await page.locator('input[type=file]').setInputFiles(duplicate)
+  const preview = page.getByRole('region', { name: 'Dataset preview' })
+  await expect(preview.getByRole('columnheader', { name: 'field [1]', exact: true })).toBeVisible()
+  await expect(preview.getByRole('columnheader', { name: 'FIELD [2]', exact: true })).toBeVisible()
+  await page.getByRole('checkbox', { name: 'First record contains headers' }).uncheck()
+  await page.getByLabel('Delimiter').selectOption('\t')
+  await upload(page, '1\tغرب\n2\tشرق')
+  await expect(preview.getByRole('columnheader', { name: 'Column 1', exact: true })).toBeVisible()
+  await expect(preview.getByRole('cell', { name: 'غرب', exact: true })).toBeVisible()
+  await expect(page.getByTestId('rows')).toHaveText('2')
+  await upload(page, '\t\n')
+  await expect(page.getByTestId('rows')).toHaveText('1')
+  await expect(page.getByTestId('columns')).toHaveText('2')
+})
+
+test('profiles a large multi-column dataset inside the existing bounds', async ({ page, browserName }) => {
+  await page.goto('/')
+  const data = Buffer.from('value,label,enabled,date\n' +
+    '10,شمال,true,2024-01-01\n30,جنوب,false,2024-01-02\n'.repeat(40_000))
+  await upload(page, data)
+  await expect(page.getByTestId('rows')).toHaveText('80,000', { timeout: 12_000 })
+  await expect(page.getByTestId('duplicate-rows')).toHaveText('79,998')
+  const row = page.getByRole('region', { name: 'Column profiles' }).getByRole('row')
+    .filter({ has: page.getByRole('rowheader', { name: 'value', exact: true }) })
+  await row.getByText('Details', { exact: true }).click()
+  await expect(row.locator('dl')).toHaveText('Count80,000Mean20Minimum10Maximum30Median20')
+  const milliseconds = await page.evaluate(() => performance.getEntriesByName('askora:analysis').at(-1)?.duration)
+  console.log(JSON.stringify({ mode, browserName, bytes: data.length, rows: 80000, columns: 4, milliseconds }))
 })
