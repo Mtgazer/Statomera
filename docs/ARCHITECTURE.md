@@ -29,6 +29,8 @@ Phase 5A adds an isolated bilingual question parser. It accepts only question te
 
 Phase 5B binds prepared questions to the active in-memory dataset revision, validates candidates against a closed route list and reuses verified profile and worker evidence. The router invalidates pending work on session changes and defers presentation to Phase 5C. An isolated browser harness exercises the same workspace lifecycle. See the [Phase 5B router and verification](PHASE_5B_REPORT.md).
 
+Phase 5C mounts a localized conversation panel for the published dataset revision. It renders structured evidence from Phase 5B using shared evidence components. The panel owns a bounded in-memory transcript and aborts pending work when its revision is retired or the transcript is cleared. See the [Phase 5C report](PHASE_5C_REPORT.md).
+
 ## Candidate comparison
 
 Primary references reviewed 2026-11-18. Package licenses are indicative for the named project, with pinned dependency, font and model terms to be verified before adoption. Device and performance judgments are design estimates.
