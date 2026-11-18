@@ -4,7 +4,8 @@ import type { AnalysisErrorCode, AnalysisResult } from './analysis.ts'
 import { formatNumber, messages } from './locale.ts'
 import type { Locale } from './locale.ts'
 import { commonMissingMarkers, defaultCsvOptions } from './dataset.ts'
-import type { DatasetSession } from './dataset-session.ts'
+import { ConversationPanel } from './conversation/panel.tsx'
+import type { DatasetRevision, DatasetSession } from './dataset-session.ts'
 import type { CsvOptions, SchemaType } from './dataset.ts'
 import type { RunInference } from './inference-panel.tsx'
 import type { RunStatistic } from './statistics-panel.tsx'
@@ -15,7 +16,7 @@ type Status =
   | { phase: 'idle' }
   | { phase: 'busy' }
   | { phase: 'error'; error: AnalysisErrorCode }
-  | { phase: 'complete'; result: AnalysisResult }
+  | { phase: 'complete'; result: AnalysisResult; revision: DatasetRevision }
 
 export function App({ session }: { session: DatasetSession }) {
   const [locale, setLocale] = useState<Locale>('en')
@@ -91,7 +92,7 @@ export function App({ session }: { session: DatasetSession }) {
       performance.measure('askora:analysis', {
         start: startTime, end: performance.now(), detail: result.timings,
       })
-      setStatus({ phase: 'complete', result })
+      setStatus({ phase: 'complete', result, revision: selection.revision })
     } catch (error) {
       if (job.current !== controller) return
       setStatus({ phase: 'error', error: error instanceof AnalysisError ? error.code : 'engine' })
@@ -193,7 +194,8 @@ export function App({ session }: { session: DatasetSession }) {
       </div>
       {status.phase === 'error' && status.error !== 'cancelled' &&
         <p role="alert" className="notice error">{t.errors[status.error]}</p>}
-      {status.phase === 'complete' && <Results result={status.result} locale={locale} filename={fileInfo?.name ?? ''} onOverride={updateOverride} onStatistic={runStatistic} onInference={runInference} />}
+      {status.phase === 'complete' && <Results result={status.result} locale={locale} filename={fileInfo?.name ?? ''} onOverride={updateOverride} onStatistic={runStatistic} onInference={runInference}
+        conversation={<ConversationPanel key={status.revision.ordinal} session={session} revision={status.revision} locale={locale} />} />}
     </main>
   </>
 }

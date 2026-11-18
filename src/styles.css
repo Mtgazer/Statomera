@@ -228,3 +228,36 @@ td[data-selected], tr[data-selected] > th { background: var(--selection); }
 .chart-table th, .chart-table td { overflow-wrap: anywhere; }
 .chart-density { stroke: var(--accent-text); stroke-width: .55; }
 .chart-interval-values { max-inline-size: 36rem; }
+
+.conversation-panel { border-block-start: 2px solid var(--accent-text); }
+.conversation-header, .conversation-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .55rem 1rem; }
+.conversation-header { justify-content: space-between; }
+.conversation-header h2 { margin: 0; }
+.conversation-turns { list-style: none; padding: .35rem; margin-block: .8rem; max-block-size: min(65vh, 34rem); overflow: auto; }
+.conversation-turns > li + li { margin-block-start: 1rem; }
+.conversation-question, .conversation-reply { padding: .65rem .8rem; border-radius: .5rem; overflow-wrap: anywhere; }
+.conversation-question {
+  inline-size: fit-content; max-inline-size: 95%; margin-block: 0 .55rem; margin-inline: auto 0;
+  background: var(--selection); border-inline-end: 2px solid var(--accent-text);
+}
+.conversation-question strong { display: block; }
+.conversation-reply { background: var(--background); border: 1px solid var(--border); }
+.conversation-reply h3 { margin-block: .55rem .25rem; }
+.conversation-reply p { margin-block: .35rem .65rem; }
+.conversation-reply ul { padding-inline-start: 1.25rem; }
+.conversation-reply td bdi, .conversation-reply th bdi { min-inline-size: 0; }
+.conversation-reply th, .conversation-reply td { padding-inline: .4rem; }
+.conversation-speaker { font-size: .85rem; font-weight: 650; color: var(--accent-text); }
+.conversation-parameters { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr)); gap: .45rem .85rem; }
+.conversation-parameters dt { color: var(--muted); font-size: .875rem; }
+.conversation-parameters dd { margin: 0; }
+.conversation-form { display: grid; gap: .4rem; }
+.conversation-form label { font-weight: 650; }
+.conversation-form textarea {
+  inline-size: 100%; min-block-size: 4rem; resize: vertical; padding: .6rem .7rem;
+  background: var(--background); color: var(--ink); border: 1px solid var(--control-border);
+  border-radius: .45rem; font: inherit; text-align: start;
+}
+.conversation-actions { justify-content: flex-end; }
+.conversation-actions span { margin-inline-end: auto; font-size: .85rem; }
+.conversation-actions button:disabled, .conversation-reply button:disabled { opacity: .65; cursor: default; }

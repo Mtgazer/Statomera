@@ -14,7 +14,7 @@ import type { Locale } from './locale.ts'
 export const inferenceTitle = { en: 'Statistical inference', ar: 'الاستدلال الإحصائي' }
 export type RunInference = (request: InferenceRequest, signal: AbortSignal) => Promise<InferenceResult>
 
-const copy = {
+export const inferenceCopy = {
   en: {
     method: 'Inference method', column: 'Outcome column', second: 'Matched column', grouping: 'Grouping column',
     groupA: 'Group A', groupB: 'Group B', choose: 'Choose a group', level: 'Confidence level',
@@ -109,8 +109,8 @@ function decimalInput(text: string) {
     .replace(/٫/g, '.').replace(/−/g, '-'))
 }
 
-function InferenceOutput({ result, locale }: { result: InferenceResult; locale: Locale }) {
-  const t = copy[locale]
+export function InferenceOutput({ result, locale }: { result: InferenceResult; locale: Locale }) {
+  const t = inferenceCopy[locale]
   const number = (value: number | null) => value === null ? t.undefined : formatNumber(value, locale, 17)
   const { request } = result
   const percent = new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en', { style: 'percent' }).format(request.level / 100)
@@ -156,7 +156,7 @@ function InferenceOutput({ result, locale }: { result: InferenceResult; locale: 
 }
 
 export function InferencePanel({ columns, locale, onRun }: { columns: ColumnProfile[]; locale: Locale; onRun: RunInference }) {
-  const t = copy[locale]
+  const t = inferenceCopy[locale]
   const common = messages[locale]
   const [method, setMethod] = useState<InferenceMethod>('meanInterval')
   const [level, setLevel] = useState<ConfidenceLevel>(95)

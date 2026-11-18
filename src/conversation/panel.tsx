@@ -1,0 +1,113 @@
+import { useLayoutEffect, useRef, useState } from 'react'
+import type { DatasetRevision, DatasetSession } from '../dataset-session.ts'
+import { questionLimit } from '../intent/columns.ts'
+import { formatNumber } from '../locale.ts'
+import type { Locale } from '../locale.ts'
+import type { AnalysisExecution } from '../router/contract.ts'
+import { createAnalysisRouter } from '../router/execute.ts'
+import { ConversationAnswer, replyLabel } from './answer.tsx'
+import { conversationCopy } from './copy.ts'
+
+const turnLimit = 24
+type Turn = { id: number; question: string; reply?: AnalysisExecution }
+
+export function ConversationPanel({ session, revision, locale }: {
+  session: DatasetSession; revision: DatasetRevision; locale: Locale
+}) {
+  const [router] = useState(() => createAnalysisRouter(session))
+  const [draft, setDraft] = useState('')
+  const [turns, setTurns] = useState<Turn[]>([])
+  const [busy, setBusy] = useState(false)
+  const [cleared, setCleared] = useState(false)
+  const active = useRef<AbortController | null>(null)
+  const sequence = useRef(0)
+  const input = useRef<HTMLTextAreaElement>(null)
+  const transcript = useRef<HTMLOListElement>(null)
+  const t = conversationCopy[locale]
+
+  useLayoutEffect(() => () => {
+    active.current?.abort()
+    active.current = null
+  }, [])
+
+  const latestId = turns.at(-1)?.id
+  const last = turns.at(-1)?.reply
+
+  // Start the newest turn at the top of the log without moving page focus.
+  useLayoutEffect(() => {
+    const list = transcript.current
+    const latest = list?.lastElementChild
+    if (list && latest) list.scrollTop += latest.getBoundingClientRect().top - list.getBoundingClientRect().top - 4
+  }, [latestId, last])
+
+  async function submit(question: string, retryId?: number) {
+    if (active.current || !question.trim() || question.length > questionLimit || session.active()?.revision !== revision) return
+    const controller = new AbortController()
+    const id = retryId ?? ++sequence.current
+    active.current = controller
+    setBusy(true)
+    setCleared(false)
+    if (retryId === undefined) setDraft('')
+    setTurns(previous => [...previous.filter(turn => turn.id !== id), { id, question }].slice(-turnLimit))
+    input.current?.focus()
+
+    let reply: AnalysisExecution
+    try {
+      reply = await router.run(question, controller.signal)
+    } catch {
+      reply = { status: 'failed', stage: 'execution', revision, reason: 'engine' }
+    }
+    if (active.current !== controller || session.active()?.revision !== revision || reply.revision !== revision) return
+    active.current = null
+    setBusy(false)
+    setTurns(previous => previous.map(turn => turn.id === id ? { ...turn, reply } : turn))
+  }
+
+  function clear() {
+    active.current?.abort()
+    active.current = null
+    setBusy(false)
+    setCleared(true)
+    setTurns([])
+    setDraft('')
+    input.current?.focus()
+  }
+
+  return <section id="conversation" className="panel workspace-section conversation-panel" aria-labelledby="conversation-title">
+    <div className="conversation-header">
+      <h2 id="conversation-title">{t.title}</h2>
+      {(turns.length > 0 || draft.length > 0) && <button type="button" onClick={clear}>{t.clear}</button>}
+    </div>
+    {turns.length === 0 ? <p className="muted">{t.hint}</p> :
+      <ol className="conversation-turns" ref={transcript} role="list" aria-label={t.transcript} tabIndex={0}>
+        {turns.map(({ id, question, reply }) => <li key={id}>
+          <p className="conversation-question"><strong>{t.you}</strong><bdi>{question}</bdi></p>
+          <div className="conversation-reply">
+            <span className="conversation-speaker">{t.answer}</span>
+            {reply ? <ConversationAnswer result={reply} locale={locale} /> : <p>{t.working}</p>}
+            {(reply?.status === 'cancelled' || (reply?.status === 'failed' && reply.stage === 'execution')) &&
+              <button type="button" disabled={busy} onClick={() => { void submit(question, id) }}>{t.retry}</button>}
+          </div>
+        </li>)}
+      </ol>}
+    <form className="conversation-form" onSubmit={event => { event.preventDefault(); void submit(draft) }}>
+      <label htmlFor="conversation-question">{t.label}</label>
+      <textarea ref={input} id="conversation-question" rows={2} dir="auto" value={draft} maxLength={questionLimit}
+        placeholder={t.example} aria-describedby="conversation-keys" onChange={event => setDraft(event.currentTarget.value)}
+        onKeyDown={event => {
+          if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) return
+          event.preventDefault()
+          void submit(draft)
+        }} />
+      <div className="conversation-actions">
+        <span id="conversation-keys" className="muted">{t.keys}</span>
+        {busy && <button type="button" onClick={() => { active.current?.abort(); input.current?.focus() }}>{t.cancel}</button>}
+        <button className="primary" type="submit" disabled={busy || !draft.trim()}>{t.send}</button>
+      </div>
+    </form>
+    <p className="sr-only" aria-live="polite" aria-atomic="true">
+      {busy ? t.working : last ? replyLabel(last, locale) : cleared ? t.cleared : t.ready}
+      {latestId !== undefined && <> {t.label} {formatNumber(latestId, locale)}.</>}
+    </p>
+  </section>
+}

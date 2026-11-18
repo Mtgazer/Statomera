@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+import { conversationCopy } from './conversation/copy.ts'
 import { useState } from 'react'
 import { distinctLimit, schemaTypes } from './dataset.ts'
 import type { SchemaType } from './dataset.ts'
@@ -58,10 +60,11 @@ function ProfileDetails({ column, rows, locale, salary, open, onToggle }: {
   </details>
 }
 
-export function Results({ result, locale, filename, onOverride, onStatistic, onInference }: {
+export function Results({ result, locale, filename, onOverride, onStatistic, onInference, conversation }: {
   result: AnalysisResult
   locale: Locale
   filename: string
+  conversation: ReactNode
   onInference: RunInference
   onStatistic: RunStatistic
   onOverride: (id: string, type: SchemaType | 'auto') => void
@@ -96,7 +99,7 @@ export function Results({ result, locale, filename, onOverride, onStatistic, onI
 
   return <>
     <nav className="workspace-nav" aria-label={t.workspaceSections}>
-      <a href="#dataset-overview">{t.overview}</a><a href="#dataset-preview">{t.preview}</a>
+      <a href="#dataset-overview">{t.overview}</a><a href="#conversation">{conversationCopy[locale].title}</a><a href="#dataset-preview">{t.preview}</a>
       <a href="#dataset-quality">{t.qualitySummary}</a><a href="#column-explorer">{t.explorer}</a>
       <a href="#descriptive-statistics">{statisticsTitle[locale]}</a>
       <a href="#statistical-inference">{inferenceTitle[locale]}</a>
@@ -121,6 +124,7 @@ export function Results({ result, locale, filename, onOverride, onStatistic, onI
         <div key={id}><dt>{label}</dt><dd data-testid={id}>{number(value)}</dd></div>,
       )}</dl>
     </section>
+    {conversation}
     <Preview result={result} locale={locale} selected={selected} onSelect={selectColumn} />
     <section id="dataset-quality" aria-labelledby="quality-title" className="panel workspace-section">
       <div className="section-heading"><h2 id="quality-title">{t.qualitySummary}</h2>

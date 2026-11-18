@@ -11,7 +11,7 @@ import type { StatisticMethod, StatisticOperation, StatisticRequest, StatisticRe
 
 export const statisticsTitle = { en: 'Descriptive statistics', ar: 'الإحصاءات الوصفية' }
 
-const copy = {
+export const statisticCopy = {
   en: {
     operation: 'Operation', first: 'Numerical column', second: 'Second numerical column',
     run: 'Calculate', busy: 'Calculating…', empty: 'Use a numeric schema for at least one column to calculate a statistic.',
@@ -35,13 +35,14 @@ const copy = {
       populationRoot: 'Square root of the variance with divisor n.',
       pairedPearson: 'Centered cross-product divided by the geometric mean of the two centered sums of squares.',
     },
+    pairedExclusion: 'For Pearson, both values in a record must be valid.',
     reasons: {
       noObservations: 'There are no eligible observations.', insufficientObservations: 'This operation needs at least two eligible observations.',
       constantInput: 'At least one column is constant among the complete pairs.',
       numericRange: 'The result exceeds the finite numeric range.',
     },
     warnings: {
-      excluded: 'Missing and invalid values are excluded. For Pearson, both values in a record must be valid.',
+      excluded: 'Missing and invalid values are excluded.',
       roundedToZero: 'A nonzero result is too small to represent and rounded to zero.',
     },
   },
@@ -68,13 +69,14 @@ const copy = {
       populationRoot: 'الجذر التربيعي للتباين المحسوب بقاسم يساوي عدد القيم.',
       pairedPearson: 'مجموع جداءات الانحرافات عن المتوسط مقسومًا على المتوسط الهندسي لمجموعَي مربعات الانحرافات.',
     },
+    pairedExclusion: 'يتطلب معامل بيرسون قيمتين صالحتين في كل سجل.',
     reasons: {
       noObservations: 'لا توجد مشاهدات مؤهلة.', insufficientObservations: 'تتطلب هذه العملية مشاهدتين مؤهلتين على الأقل.',
       constantInput: 'قيم أحد العمودين على الأقل ثابتة ضمن الأزواج المكتملة.',
       numericRange: 'النتيجة خارج المجال العددي المحدود.',
     },
     warnings: {
-      excluded: 'تُستبعد القيم المفقودة وغير الصالحة. يتطلب معامل بيرسون قيمتين صالحتين في كل سجل.',
+      excluded: 'تُستبعد القيم المفقودة وغير الصالحة.',
       roundedToZero: 'النتيجة غير الصفرية أصغر من أن تُمثّل عدديًا، فقُرّبت إلى الصفر.',
     },
   },
@@ -91,7 +93,7 @@ export function StatisticsPanel({ columns, locale, onRun }: {
   columns: ColumnProfile[]; locale: Locale; onRun: RunStatistic
 }) {
   const numeric = columns.filter(column => column.type === 'numeric')
-  const t = copy[locale]
+  const t = statisticCopy[locale]
   const common = messages[locale]
   const [operation, setOperation] = useState<StatisticOperation>('mean')
   const [firstId, setFirst] = useState('')
@@ -171,23 +173,29 @@ export function StatisticsPanel({ columns, locale, onRun }: {
     <div role="status" aria-atomic="true">
       {busy && <p>{t.busy}</p>}
       {error && <p>{common.errors[error]}</p>}
-      {result && <>
-        <p className="statistic-answer">{t.result} <strong data-testid="statistic-value" data-value={result.value ?? undefined}>
-          {result.value === null ? t.undefined : formatNumber(result.value, locale, 17)}
-        </strong></p>
-        {result.reason && <p>{t.reasons[result.reason]}</p>}
-        <dl className="metrics">
-          {([[paired ? t.pairs : t.valid, result.valid], [t.excluded, result.excluded],
-            [t.missing, result.missingOnly], [t.invalid, result.invalid]] as const).map(([label, count]) =>
-            <div key={label}><dt>{label}</dt><dd>{formatNumber(count, locale)}</dd></div>,
-          )}
-        </dl>
-        <p className="muted"><strong>{t.method}</strong> {t.methods[result.method]}</p>
-        {result.warnings.map(warning => <p className="muted" key={warning}>{t.warnings[warning]}</p>)}
-        {paired && <p className="muted">{t.pearsonHelp}</p>}
-      </>}
+      {result && <StatisticEvidence result={result} locale={locale} />}
     </div>
     {result?.scatter && first && second && <ScatterChart data={result.scatter} total={result.valid} locale={locale}
       labels={[columnLabel(first, locale), columnLabel(second, locale)]} />}
   </section>
+}
+
+export function StatisticEvidence({ result, locale }: { result: Omit<StatisticResult, 'scatter'>; locale: Locale }) {
+  const t = statisticCopy[locale]
+  const paired = result.operation === 'pearson'
+  return <>
+    <p className="statistic-answer">{t.result} <strong data-testid="statistic-value" data-value={result.value ?? undefined}>
+      {result.value === null ? t.undefined : formatNumber(result.value, locale, 17)}
+    </strong></p>
+    {result.reason && <p>{t.reasons[result.reason]}</p>}
+    <dl className="metrics">
+      {([[paired ? t.pairs : t.valid, result.valid], [t.excluded, result.excluded],
+        [t.missing, result.missingOnly], [t.invalid, result.invalid]] as const).map(([label, count]) =>
+        <div key={label}><dt>{label}</dt><dd>{formatNumber(count, locale)}</dd></div>,
+      )}
+    </dl>
+    <p className="muted"><strong>{t.method}</strong> {t.methods[result.method]}</p>
+    {result.warnings.map(warning => <p className="muted" key={warning}>{t.warnings[warning]}{paired && warning === 'excluded' && ' ' + t.pairedExclusion}</p>)}
+    {paired && <p className="muted">{t.pearsonHelp}</p>}
+  </>
 }
