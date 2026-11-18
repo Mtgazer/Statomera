@@ -51,7 +51,7 @@ test('local picker flow, identical bilingual results and theme switch on a narro
 test('malformed, empty, invalid-encoding and over-limit inputs recover', async ({ page }) => {
   await page.goto('/')
   for (const [contents, message, name] of [
-    ['', 'The file is empty.'],
+    ['', 'The file is empty. Choose a file with a header or data records.'],
     ['employee,salary\nAmal', /different number of fields/],
     ['employee,salary\n"Amal,20', /unmatched quotes/],
     ['salary,salary\n1,2', /unique/],
@@ -241,7 +241,6 @@ test('analysis works when previously loaded assets are supplied without live req
 })
 
 test('near-limit input returns the reference mean and retires every worker', async ({ page, context, browserName }) => {
-  await page.setViewportSize({ width: 360, height: 800 })
   await page.addInitScript(() => {
     const NativeWorker = window.Worker
     window.Worker = class extends NativeWorker {
@@ -467,10 +466,13 @@ test('XLSX worksheet selection, strict cell policy and local asset loading', asy
   const override = amount.getByRole('combobox')
   await override.selectOption('text')
   await expect(override).toHaveValue('text')
+  await worksheet.focus()
   await worksheet.selectOption('2')
   await expect(page.getByRole('alert')).toContainText('unsupported content')
+  await expect(worksheet).toBeFocused()
   await worksheet.selectOption('1')
   await expect(page.getByTestId('rows')).toHaveText('2')
+  await expect(worksheet).toBeFocused()
   await expect(override).toHaveValue('auto')
   await amount.getByText('Details', { exact: true }).click()
   await expect(amount.locator('dl.profile-statistics').first()).toContainText('Mean50')
@@ -611,14 +613,14 @@ test('descriptive statistics use the active schema and show bilingual paired pro
   await page.keyboard.press('Enter')
   const value = panel.getByTestId('statistic-value')
   await expect(value).toHaveAttribute('data-value', String(20 / 3))
-  await expect(panel.getByRole('status')).toContainText('Missing only2')
+  await expect(panel.getByRole('group', { name: 'Analysis evidence' })).toContainText('Missing only2')
   await operation.selectOption('pearson')
   await panel.getByLabel('Second numerical column').selectOption({ label: 'positive' })
   await calculate.click()
   await expect(value).toHaveText('1')
-  await expect(panel.getByRole('status')).toContainText('Complete pairs4')
-  await expect(panel.getByRole('status')).toContainText('Excluded records3')
-  await expect(panel.getByRole('status')).toContainText('With invalid values2')
+  await expect(panel.getByRole('group', { name: 'Analysis evidence' })).toContainText('Complete pairs4')
+  await expect(panel.getByRole('group', { name: 'Analysis evidence' })).toContainText('Excluded records3')
+  await expect(panel.getByRole('group', { name: 'Analysis evidence' })).toContainText('With invalid values2')
   await expect(panel.getByText(/cannot establish causation/)).toBeVisible()
   await panel.getByLabel('Second numerical column').selectOption({ label: 'ثابت' })
   await calculate.click()
@@ -676,6 +678,7 @@ test('descriptive worker cancels, retires on replacement and recovers', async ({
 })
 
 test('near-limit descriptive runs are local, bounded and release every worker', async ({ page, context, browserName }) => {
+  await page.setViewportSize({ width: 360, height: 800 })
   const requests: { url: string; method: string; body: string | null }[] = []
   context.on('request', req => requests.push({ url: req.url(), method: req.method(), body: req.postData() }))
   await page.addInitScript(() => {
@@ -709,6 +712,8 @@ test('near-limit descriptive runs are local, bounded and release every worker', 
   const csv = Buffer.from('left,right,label\n' + `1,2,${token}\n3,6,${token}\n`.repeat(50000))
   await upload(page, csv)
   await expect(page.getByTestId('rows')).toHaveText('100,000')
+  await expect(page.getByRole('region', { name: 'Preview table' }).getByRole('row')).toHaveCount(9)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(360)
   expect(requests.some(request => /\/assets\/statistics-/.test(request.url))).toBe(false)
   const panel = page.getByRole('region', { name: 'Descriptive statistics' })
   await panel.getByLabel('Operation').selectOption('pearson')
@@ -717,7 +722,7 @@ test('near-limit descriptive runs are local, bounded and release every worker', 
     const start = performance.now()
     await panel.getByRole('button', { name: 'Calculate' }).click()
     await expect(panel.getByTestId('statistic-value')).toHaveText('1')
-    await expect(panel.getByRole('status')).toContainText('Complete pairs100,000')
+    await expect(panel.getByRole('group', { name: 'Analysis evidence' })).toContainText('Complete pairs100,000')
     const plot = panel.getByRole('img', { name: 'Scatter plot' })
     await expect(plot).toBeVisible()
     await expect(plot.locator('.chart-density')).toHaveCount(2)
@@ -734,6 +739,7 @@ test('near-limit descriptive runs are local, bounded and release every worker', 
   const plotFrameMs = await plotFrames()
   const plotCommitMs = await page.evaluate(() => performance.getEntriesByName('askora:test:plot-commit')
     .map(entry => Math.round(entry.duration * 10) / 10))
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(360)
   const lifecycle = await page.evaluate(async () => ({
     started: performance.getEntriesByName('askora:test:started').length,
     terminated: performance.getEntriesByName('askora:test:terminated').length,
@@ -756,7 +762,7 @@ test('inference explains interval, paired and Welch results in English and Arabi
   const panel = page.getByRole('region', { name: 'Statistical inference' })
   const method = panel.getByRole('combobox', { name: 'Inference method' })
   const run = panel.getByRole('button', { name: 'Run inference' })
-  const status = panel.getByRole('status')
+  const evidence = panel.getByRole('group', { name: 'Analysis evidence' })
   await expect(panel.getByRole('combobox', { name: 'Confidence level' })).toHaveValue('95')
   await run.press('Enter')
   await expect(panel.getByRole('heading', { name: 'Confidence interval 95%' })).toBeVisible()
@@ -764,9 +770,9 @@ test('inference explains interval, paired and Welch results in English and Arabi
   await method.selectOption('paired')
   await run.click()
   await expect(panel.getByTestId('inference-estimate')).toHaveText('1.8')
-  await expect(status.getByRole('row').last()).toContainText('Matched pairs5')
-  await expect(status).toContainText('Two-sided hypothesis test')
-  await expect(status).toContainText('cannot establish causation')
+  await expect(evidence.getByRole('row').last()).toContainText('Matched pairs5')
+  await expect(evidence).toContainText('Two-sided hypothesis test')
+  await expect(evidence).toContainText('cannot establish causation')
   await method.selectOption('welch')
   await expect(run).toBeDisabled()
   await panel.getByRole('combobox', { name: 'Group A', exact: true }).selectOption('علاج')
@@ -774,8 +780,8 @@ test('inference explains interval, paired and Welch results in English and Arabi
   await panel.getByRole('combobox', { name: 'Group B', exact: true }).selectOption('ضبط')
   await run.click()
   await expect(panel.getByTestId('inference-estimate')).toHaveText('-4.5')
-  await expect(status).toContainText('Outside selected groups 1')
-  await expect(status.getByRole('row', { name: 'علاج 2 0 0' })).toBeVisible()
+  await expect(evidence).toContainText('Outside selected groups 1')
+  await expect(evidence.getByRole('row', { name: 'علاج 2 0 0' })).toBeVisible()
   await page.getByLabel('Theme').selectOption('light')
   await page.getByLabel('Language').selectOption('ar')
   const arabic = page.getByRole('region', { name: 'الاستدلال الإحصائي' })
@@ -793,7 +799,7 @@ test('inference explains interval, paired and Welch results in English and Arabi
   await arabic.getByRole('combobox', { name: 'المجموعة أ' }).selectOption('true')
   await arabic.getByRole('combobox', { name: 'المجموعة ب' }).selectOption('false')
   await arabic.getByRole('button', { name: 'نفّذ الاستدلال' }).click()
-  await expect(arabic.getByRole('status')).toContainText('خارج المجموعتين المحددتين ١')
+  await expect(arabic.getByRole('group', { name: 'تفاصيل التحليل' })).toContainText('خارج المجموعتين المحددتين ١')
 })
 
 test('inference worker cancels and retries without publishing a stale result', async ({ page, context }) => {
@@ -912,4 +918,154 @@ test('charts retain verified values and accessible alternatives through RTL and 
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
   await expect(page.getByRole('img', { name: /مخطط فترة الثقة ٩٥/ })).toBeVisible()
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
+})
+
+test('Phase 7A clears a running analysis and import without restoring old evidence', async ({ page, context }) => {
+  const requests: { url: string; method: string; body: string | null }[] = []
+  context.on('request', request => requests.push({
+    url: request.url(), method: request.method(), body: request.postData(),
+  }))
+  await page.goto('/')
+  await upload(page, 'salary,notes\n10,PrivateDataset\n30,staff')
+  await expect(page.getByTestId('mean')).toHaveText('20')
+  const question = page.locator('#conversation').getByRole('textbox')
+  await question.fill('How many rows?')
+  await question.press('Enter')
+  await expect(page.locator('#conversation')).toContainText('Count2')
+
+  const parser = '**/parse.worker-*.js'
+  await context.route(parser, route => route.fulfill({ contentType: 'application/javascript', body: '' }))
+  const waitForParser = () => context.waitForEvent('response', { predicate: response => /\/parse\.worker-/.test(response.url()) })
+  const waitingForAnalysis = waitForParser()
+  await question.fill('mean salary')
+  await question.press('Enter')
+  await waitingForAnalysis
+  await expect(page.locator('#conversation').getByRole('button', { name: 'Cancel question' })).toBeVisible()
+  const clear = page.getByRole('button', { name: 'Clear dataset' })
+  const choose = page.getByRole('button', { name: 'Choose file' })
+  await clear.press('Enter')
+  await expect(choose).toBeFocused()
+  await expect(page.getByRole('status')).toHaveText('Dataset cleared. Choose a file to start again.')
+  await expect(page.locator('#conversation')).toHaveCount(0)
+  await expect(page.getByTestId('mean')).toHaveCount(0)
+
+  const waitingForImport = waitForParser()
+  await upload(page, 'salary\n99')
+  await waitingForImport
+  await clear.press('Enter')
+  await expect(choose).toBeFocused()
+  await expect(page.getByRole('status')).toHaveText('Dataset cleared. Choose a file to start again.')
+  await expect(page.getByRole('button', { name: 'Retry analysis' })).toHaveCount(0)
+  await expect(page.getByRole('alert')).toHaveCount(0)
+
+  await context.unroute(parser)
+  await upload(page, '[{"salary":40},{"salary":50}]', 'replacement.json')
+  await expect(page.getByTestId('mean')).toHaveText('45')
+  await expect(question).toHaveValue('')
+  await expect(page.locator('.conversation-turns')).toHaveCount(0)
+  await question.fill('Forecast PrivateQuestion')
+  await question.press('Enter')
+  await expect(page.getByRole('heading', { name: 'Question unsupported' })).toBeVisible()
+  const origin = new URL(page.url()).origin
+  expect(requests.length).toBeGreaterThan(0)
+  const unexpected = requests.filter(({ url, method, body }) => {
+    const request = new URL(url)
+    // WebKit also reports in-memory blob loads used by setInputFiles.
+    const localAsset = request.protocol === 'blob:' || /^\/(?:assets\/[^/]+)?$/.test(request.pathname)
+    return request.origin !== origin || method !== 'GET' || body !== null || request.search ||
+      !localAsset || /PrivateDataset|PrivateQuestion/.test(url)
+  })
+  expect(unexpected).toEqual([])
+  expect(await page.evaluate(async () => [
+    localStorage.length, sessionStorage.length, (await indexedDB.databases()).length,
+    (await caches.keys()).length, document.cookie.length,
+  ])).toEqual([0, 0, 0, 0, 0])
+})
+
+test('Phase 7A offers keyboard recovery from import options and transient failures', async ({ page, context }) => {
+  await page.goto('/')
+  await upload(page, 'salary,SALARY\n10,20\n30,40')
+  await expect(page.getByRole('alert')).toContainText('Column names must be present and unique')
+  await expect(page.getByTestId('rows')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Review import options' }).press('Enter')
+  await expect(page.getByText('Import options', { exact: true })).toBeFocused()
+  await page.getByLabel('Keep duplicate headers with column numbers').check()
+  await page.getByRole('button', { name: 'Retry with import options' }).press('Enter')
+  await expect(page.getByTestId('rows')).toHaveText('2')
+  await expect(page.getByRole('alert')).toHaveCount(0)
+  await expect(page.getByText('Dataset ready. Records: 2. Columns: 2.')).toBeAttached()
+
+  await page.getByLabel('Language').selectOption('ar')
+  await page.setViewportSize({ width: 320, height: 750 })
+  const worker = '**/parse.worker-*.js'
+  await context.route(worker, route => route.abort())
+  await upload(page, 'الراتب\n5\n15')
+  await expect(page.getByRole('alert')).toHaveText('تعذّرت معالجة الملف. حاول اختياره مجددًا.')
+  await expect(page.getByTestId('rows')).toHaveCount(0)
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
+  await context.unroute(worker)
+  await page.getByRole('button', { name: 'إعادة محاولة التحليل' }).press('Enter')
+  await expect(page.getByTestId('mean')).toHaveText('١٠')
+  await expect(page.getByRole('alert')).toHaveCount(0)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
+})
+
+test('Phase 7A focuses workspace sections and announces concise analytical states', async ({ page, context }) => {
+  await page.setViewportSize({ width: 320, height: 750 })
+  await page.goto('/')
+  await page.keyboard.press('Tab')
+  await expect(page.getByRole('link', { name: 'Skip to dataset workspace' })).toBeFocused()
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('main')).toBeFocused()
+
+  await upload(page, 'salary,constant\n10,4\n30,4')
+  const nav = page.getByRole('navigation', { name: 'Workspace sections' })
+  await nav.getByRole('link', { name: 'Dataset preview' }).press('Enter')
+  const preview = page.getByRole('region', { name: 'Dataset preview', exact: true })
+  await expect(preview).toBeFocused()
+  await page.keyboard.press('Tab')
+  const search = preview.getByRole('searchbox')
+  await expect(search).toBeFocused()
+  await expect(search).toHaveAccessibleDescription('Search, filtering and sorting apply only to the first eight records.')
+  await expect(preview.getByRole('region', { name: 'Preview table' })).toHaveAttribute('tabindex', '0')
+
+  await nav.getByRole('link', { name: 'Descriptive statistics' }).press('Enter')
+  const stats = page.getByRole('region', { name: 'Descriptive statistics' })
+  await expect(stats).toBeFocused()
+  const run = stats.getByRole('button', { name: 'Calculate' })
+  const status = stats.getByRole('status')
+  const parser = '**/parse.worker-*.js'
+  await context.route(parser, route => route.abort())
+  await run.press('Enter')
+  await expect(status).toContainText('Run the analysis again to retry.')
+  await expect(run).toBeFocused()
+  await expect(stats.getByTestId('statistic-value')).toHaveCount(0)
+  await context.unroute(parser)
+
+  let releaseWorker!: () => void
+  const release = new Promise<void>(resolve => { releaseWorker = resolve })
+  await context.route(parser, async route => {
+    const response = await route.fetch()
+    await release
+    await route.fulfill({ response })
+  }, { times: 1 })
+  try {
+    await run.press('Enter')
+    await page.keyboard.press('Tab')
+    await expect(stats.getByRole('button', { name: 'Cancel', exact: true })).toBeFocused()
+    expect(await page.evaluate(() => getComputedStyle(document.activeElement!).outlineStyle)).toBe('solid')
+  } finally {
+    releaseWorker()
+  }
+  await expect(status).toHaveText('Result ready. Review the analysis evidence.')
+  await expect(run).toBeFocused()
+  const evidence = stats.getByRole('group', { name: 'Analysis evidence' })
+  await expect(evidence.getByTestId('statistic-value')).toHaveText('20')
+  await expect(evidence).toContainText('Valid observations2')
+  await stats.getByLabel('Operation').selectOption('pearson')
+  await run.press('Enter')
+  await expect(status).toHaveText('Result unavailable. Review the analysis evidence.')
+  await expect(evidence.getByTestId('statistic-value')).toHaveText('Undefined')
+  await expect(evidence).toContainText('At least one column is constant')
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
 })

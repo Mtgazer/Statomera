@@ -13,9 +13,13 @@ import { Results } from './results.tsx'
 import './styles.css'
 
 type Status =
-  | { phase: 'idle' }
+  | { phase: 'idle' | 'cleared' }
   | { phase: 'busy' }
   | { phase: 'error'; error: AnalysisErrorCode }
+
+const worksheetId = 'import-worksheet'
+const retryableErrors = new Set<AnalysisErrorCode>(['cancelled', 'read', 'engine', 'timeout'])
+const importOptionErrors = new Set<AnalysisErrorCode>(['headers', 'delimiter', 'options'])
 
 export function App({ session }: { session: DatasetSession<AnalysisResult> }) {
   const [locale, setLocale] = useState<Locale>('en')
@@ -26,12 +30,18 @@ export function App({ session }: { session: DatasetSession<AnalysisResult> }) {
   const [options, setOptions] = useState(defaultCsvOptions)
   const [fileInfo, setFileInfo] = useState<{ name: string; size: number }>()
   const job = useRef<AbortController | null>(null)
-  const overrideFocus = useRef<string | null>(null)
+  const returnFocus = useRef<string | null>(null)
   const cancelButton = useRef<HTMLButtonElement>(null)
   const retryButton = useRef<HTMLButtonElement>(null)
   const picker = useRef<HTMLInputElement>(null)
+  const importDetails = useRef<HTMLDetailsElement>(null)
+  const importSummary = useRef<HTMLElement>(null)
   const choose = useRef<HTMLButtonElement>(null)
   const t = messages[locale]
+  const error = status.phase === 'error' ? status.error : undefined
+  const recoverOptions = error !== undefined && importOptionErrors.has(error)
+  const retryImport = error !== undefined && (retryableErrors.has(error) || returnFocus.current?.startsWith('schema-'))
+  const importPending = status.phase === 'busy' || status.phase === 'error'
 
   useLayoutEffect(() => {
     document.documentElement.lang = locale
@@ -45,21 +55,51 @@ export function App({ session }: { session: DatasetSession<AnalysisResult> }) {
   }, [session])
 
   useLayoutEffect(() => {
-    if (!overrideFocus.current) return
-    if (status.phase === 'busy') cancelButton.current?.focus()
+    const target = returnFocus.current
+    if (!target) return
+    const focused = document.activeElement
     if (active) {
-      if (document.activeElement === document.body) document.getElementById(`schema-${overrideFocus.current}`)?.focus()
-      overrideFocus.current = null
+      if (focused === document.body) document.getElementById(target)?.focus()
+      returnFocus.current = null
+    } else if (status.phase === 'busy' && (focused === document.body || focused?.id === target)) {
+      cancelButton.current?.focus()
+    } else if (status.phase === 'error' && focused === document.body) {
+      if (target === worksheetId) document.getElementById(target)?.focus()
+      else retryButton.current?.focus()
     }
-    if (status.phase === 'error' && document.activeElement === document.body) retryButton.current?.focus()
   }, [active, status])
+
+  function clearDataset() {
+    const pending = job.current
+    job.current = null
+    pending?.abort()
+    session.clear()
+    returnFocus.current = null
+    setWorkbook(undefined)
+    setFileInfo(undefined)
+    setStatus({ phase: 'cleared' })
+    choose.current?.focus()
+  }
+
+  function reviewOptions() {
+    if (!importDetails.current) return
+    importDetails.current.open = true
+    importSummary.current?.focus()
+  }
+
+  function retry(useNewOptions: boolean) {
+    const current = session.selection()
+    if (!current) return
+    if (!returnFocus.current) choose.current?.focus()
+    void start(current.file, useNewOptions ? { ...current.options, ...options } : current.options)
+  }
 
   function updateOverride(id: string, type: SchemaType | 'auto') {
     const current = session.selection()
     if (!current) return
     const schemaOverrides = { ...current.options.schemaOverrides, [id]: type === 'auto' ? undefined : type }
     if (type === 'auto') delete schemaOverrides[id]
-    overrideFocus.current = id
+    returnFocus.current = `schema-${id}`
     void start(current.file, { ...current.options, schemaOverrides })
   }
 
@@ -132,7 +172,7 @@ export function App({ session }: { session: DatasetSession<AnalysisResult> }) {
             const selected = event.currentTarget.files?.[0]
             event.currentTarget.value = ''
             if (selected) {
-              overrideFocus.current = null
+              returnFocus.current = null
               setWorkbook(undefined)
               void start(selected, options)
             }
@@ -143,13 +183,12 @@ export function App({ session }: { session: DatasetSession<AnalysisResult> }) {
             job.current?.abort()
             choose.current?.focus()
           }}>{t.cancel}</button>}
-          {status.phase === 'error' && overrideFocus.current && <button ref={retryButton} type="button" onClick={() => {
-            const current = session.selection()
-            if (current) void start(current.file, current.options)
-          }}>{t.retry}</button>}
+          {(active || importPending) && <button type="button" onClick={clearDataset}>{t.clearDataset}</button>}
+          {retryImport && <button ref={retryButton} type="button" onClick={() => retry(false)}>{t.retry}</button>}
+          {recoverOptions && <button type="button" onClick={reviewOptions}>{t.reviewImportOptions}</button>}
         </div>
-        <details className="import-options">
-          <summary>{t.importOptions}</summary>
+        <details ref={importDetails} className="import-options">
+          <summary ref={importSummary}>{t.importOptions}</summary>
           <p className="muted">{t.applyOnImport}</p>
           <div className="import-fields">
             <label>{t.delimiter}
@@ -168,15 +207,16 @@ export function App({ session }: { session: DatasetSession<AnalysisResult> }) {
             <label><input type="checkbox" checked={options.missingMarkers.length > 0} onChange={event =>
               setOptions({ ...options, missingMarkers: event.target.checked ? commonMissingMarkers : [] })} />{t.recognizeMarkers}</label>
           </div>
+          {recoverOptions && <button className="retry-options" type="button" onClick={() => retry(true)}>{t.retryWithOptions}</button>}
         </details>
         <div className="file-status">
-          {fileInfo && status.phase !== 'idle' && !active && <p className="file-info"><bdi>{fileInfo.name}</bdi>
+          {fileInfo && importPending && !active && <p className="file-info"><bdi>{fileInfo.name}</bdi>
             <bdi className="muted">{formatNumber(fileInfo.size, locale)} {t.bytes}</bdi></p>}
-          {workbook && (active || status.phase !== 'idle') && <label className="worksheet-select">{t.worksheet}
-            <select disabled={status.phase === 'busy'} value={workbook.selected} onChange={event => {
+          {workbook && (active || importPending) && <label className="worksheet-select">{t.worksheet}
+            <select id={worksheetId} disabled={status.phase === 'busy'} value={workbook.selected} onChange={event => {
               const current = session.selection()
               if (current) {
-                overrideFocus.current = null
+                returnFocus.current = worksheetId
                 void start(current.file, { ...current.options, worksheet: Number(event.currentTarget.value),
                   schemaOverrides: undefined })
               }
@@ -189,13 +229,15 @@ export function App({ session }: { session: DatasetSession<AnalysisResult> }) {
       </section>
       <div role="status" aria-atomic="true">
         {status.phase === 'busy' && <p className="notice">{t.busy}</p>}
-        {active && <span className="sr-only">{t.summary}</span>}
+        {active && <span className="sr-only">{t.datasetReady(formatNumber(active.profile.rows, locale),
+          formatNumber(active.profile.columns.length, locale))}</span>}
+        {status.phase === 'cleared' && <p className="notice">{t.datasetCleared}</p>}
         {status.phase === 'error' && status.error === 'cancelled' && <p className="notice">{t.errors.cancelled}</p>}
       </div>
-      {status.phase === 'error' && status.error !== 'cancelled' &&
-        <p role="alert" className="notice error">{t.errors[status.error]}</p>}
-      {active && <Results result={active.profile} locale={locale} filename={active.file.name} onOverride={updateOverride} onStatistic={runStatistic} onInference={runInference}
-        conversation={<ConversationPanel key={active.revision.ordinal} session={session} revision={active.revision} locale={locale} />} />}
+      {error !== undefined && error !== 'cancelled' &&
+        <p role="alert" className="notice error">{t.errors[error]}</p>}
+      {active && <Results key={active.revision.ordinal} result={active.profile} locale={locale} filename={active.file.name} onOverride={updateOverride} onStatistic={runStatistic} onInference={runInference}
+        conversation={<ConversationPanel session={session} revision={active.revision} locale={locale} />} />}
     </main>
   </>
 }

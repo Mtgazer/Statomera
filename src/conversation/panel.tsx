@@ -23,6 +23,7 @@ export function ConversationPanel({ session, revision, locale }: {
   const active = useRef<AbortController | null>(null)
   const sequence = useRef(0)
   const input = useRef<HTMLTextAreaElement>(null)
+  const cancelButton = useRef<HTMLButtonElement>(null)
   const transcript = useRef<HTMLOListElement>(null)
   const t = conversationCopy[locale]
   const overLimit = draft.length > questionLimit
@@ -63,6 +64,7 @@ export function ConversationPanel({ session, revision, locale }: {
       reply = { status: 'failed', stage: 'execution', revision, reason: 'engine' }
     }
     if (active.current !== controller || session.active()?.revision !== revision || reply.revision !== revision) return
+    if (cancelButton.current?.matches(':focus')) input.current?.focus()
     active.current = null
     setBusy(false)
     setTurns(previous => previous.map(turn => turn.id === id ? { ...turn, reply } : turn))
@@ -83,7 +85,7 @@ export function ConversationPanel({ session, revision, locale }: {
     input.current?.focus()
   }
 
-  return <section id="conversation" className="panel workspace-section conversation-panel" aria-labelledby="conversation-title">
+  return <section id="conversation" tabIndex={-1} className="panel workspace-section conversation-panel" aria-labelledby="conversation-title">
     <div className="conversation-header">
       <h2 id="conversation-title">{t.title}</h2>
       {(turns.length > 0 || draft.length > 0) && <button type="button" onClick={clear}>{t.clear}</button>}
@@ -126,7 +128,7 @@ export function ConversationPanel({ session, revision, locale }: {
       {overLimit && <p id="conversation-limit" className="muted">{t.refusal.tooLong}</p>}
       <div className="conversation-actions">
         <span id="conversation-keys" className="muted">{t.keys}</span>
-        {busy && <button type="button" onClick={() => { active.current?.abort(); input.current?.focus() }}>{t.cancel}</button>}
+        {busy && <button ref={cancelButton} type="button" onClick={() => { active.current?.abort(); input.current?.focus() }}>{t.cancel}</button>}
         <button className="primary" type="submit" disabled={busy || overLimit || !draft.trim()}>{t.send}</button>
       </div>
     </form>

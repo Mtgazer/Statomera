@@ -171,6 +171,7 @@ export function InferencePanel({ columns, locale, onRun }: { columns: ColumnProf
   const [error, setError] = useState<AnalysisErrorCode | null>(null)
   const active = useRef<AbortController | null>(null)
   const runButton = useRef<HTMLButtonElement>(null)
+  const cancelButton = useRef<HTMLButtonElement>(null)
   useLayoutEffect(() => () => {
     active.current?.abort()
     active.current = null
@@ -217,6 +218,7 @@ export function InferencePanel({ columns, locale, onRun }: { columns: ColumnProf
     } finally {
       if (active.current === controller) {
         active.current = null
+        if (cancelButton.current?.matches(':focus')) runButton.current?.focus()
         setBusy(false)
       }
     }
@@ -226,7 +228,7 @@ export function InferencePanel({ columns, locale, onRun }: { columns: ColumnProf
     return values.map(col => <option key={col.id} value={col.id}>{columnLabel(col, locale)}</option>)
   }
 
-  return <section id="statistical-inference" aria-labelledby="inference-title" className="panel workspace-section">
+  return <section id="statistical-inference" tabIndex={-1} aria-labelledby="inference-title" className="panel workspace-section">
     <h2 id="inference-title">{inferenceTitle[locale]}</h2>
     {!first ? <p className="muted">{t.empty}</p> : <>
       <form className="statistics-form" onSubmit={event => { event.preventDefault(); void calculate() }}>
@@ -263,7 +265,7 @@ export function InferencePanel({ columns, locale, onRun }: { columns: ColumnProf
         </select></label>
         <div className="statistics-actions">
           <button ref={runButton} className="primary" type="submit" disabled={!canRun} aria-disabled={busy}>{t.run}</button>
-          {busy && <button type="button" onClick={() => { reset(); setError('cancelled'); runButton.current?.focus() }}>
+          {busy && <button ref={cancelButton} type="button" onClick={() => { reset(); setError('cancelled'); runButton.current?.focus() }}>
             {common.cancel}
           </button>}
         </div>
@@ -272,11 +274,14 @@ export function InferencePanel({ columns, locale, onRun }: { columns: ColumnProf
       {method === 'paired' && <p>{t.pairedOrder} {t.pairedNull}</p>}
       {method === 'welch' && <p>{t.chooseGroups} {t.welchOrder} {t.pairedNull}</p>}
       <p><strong>{t.assumptions}</strong> {t.designs[method]}</p>
-      <div role="status" aria-atomic="true">
+      <div role="status" aria-atomic="true" className="analysis-status">
         {busy && <p>{t.busy}</p>}
-        {error && <p>{common.errors[error]}</p>}
-        {result && <InferenceOutput result={result} locale={locale} />}
+        {error && <p className={error === 'cancelled' ? undefined : 'error'}>{common.errors[error]}
+          {(error === 'read' || error === 'engine') && <> {common.analysisRetry}</>}
+        </p>}
+        {result && <span className="sr-only">{result.reason ? common.analysisUnavailable : common.analysisReady}</span>}
       </div>
+      {result && <div role="group" aria-label={common.analysisEvidence}><InferenceOutput result={result} locale={locale} /></div>}
     </>}
   </section>
 }

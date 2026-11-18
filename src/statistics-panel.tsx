@@ -103,6 +103,7 @@ export function StatisticsPanel({ columns, locale, onRun }: {
   const [busy, setBusy] = useState(false)
   const current = useRef<AbortController | null>(null)
   const runButton = useRef<HTMLButtonElement>(null)
+  const cancelButton = useRef<HTMLButtonElement>(null)
 
   useLayoutEffect(() => () => {
     current.current?.abort()
@@ -138,12 +139,13 @@ export function StatisticsPanel({ columns, locale, onRun }: {
     } finally {
       if (current.current === controller) {
         current.current = null
+        if (cancelButton.current?.matches(':focus')) runButton.current?.focus()
         setBusy(false)
       }
     }
   }
 
-  return <section id="descriptive-statistics" aria-labelledby="statistics-title" className="panel workspace-section">
+  return <section id="descriptive-statistics" tabIndex={-1} aria-labelledby="statistics-title" className="panel workspace-section">
     <h2 id="statistics-title">{statisticsTitle[locale]}</h2>
     {!first ? <p className="muted">{t.empty}</p> :
       <form className="statistics-form" onSubmit={event => { event.preventDefault(); void calculate() }}>
@@ -163,18 +165,21 @@ export function StatisticsPanel({ columns, locale, onRun }: {
         </select></label>}
         <div className="statistics-actions">
           <button ref={runButton} className="primary" type="submit" aria-disabled={busy}>{t.run}</button>
-          {busy && <button type="button" onClick={() => {
+          {busy && <button ref={cancelButton} type="button" onClick={() => {
             reset()
             setError('cancelled')
             runButton.current?.focus()
           }}>{common.cancel}</button>}
         </div>
       </form>}
-    <div role="status" aria-atomic="true">
+    <div role="status" aria-atomic="true" className="analysis-status">
       {busy && <p>{t.busy}</p>}
-      {error && <p>{common.errors[error]}</p>}
-      {result && <StatisticEvidence result={result} locale={locale} />}
+      {error && <p className={error === 'cancelled' ? undefined : 'error'}>{common.errors[error]}
+        {(error === 'read' || error === 'engine') && <> {common.analysisRetry}</>}
+      </p>}
+      {result && <span className="sr-only">{result.reason ? common.analysisUnavailable : common.analysisReady}</span>}
     </div>
+    {result && <div role="group" aria-label={common.analysisEvidence}><StatisticEvidence result={result} locale={locale} /></div>}
     {result?.scatter && first && second && <ScatterChart data={result.scatter} total={result.valid} locale={locale}
       labels={[columnLabel(first, locale), columnLabel(second, locale)]} />}
   </section>

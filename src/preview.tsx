@@ -34,20 +34,20 @@ export function Preview({ result, locale, selected, onSelect }: {
   const qualityLabel = (value: CellQuality) => value === 'blank' ? t.blankCell
     : value === 'marked' ? t.markedCell : t.invalidCell
 
-  return <section id="dataset-preview" className="panel workspace-section">
+  return <section id="dataset-preview" tabIndex={-1} aria-labelledby="preview-title" className="panel workspace-section">
     <div className="section-heading">
-      <div><h2 id="preview-title">{t.preview}</h2><p className="muted">{t.previewScope}</p></div>
+      <div><h2 id="preview-title">{t.preview}</h2><p id="preview-scope" className="muted">{t.previewScope}</p></div>
       {selectedColumn && <p className="muted">{t.selectedColumn} <bdi>{columnLabel(selectedColumn, locale)}</bdi></p>}
     </div>
     {result.preview.length ? <>
       <div className="preview-controls">
-        <label>{t.previewSearch}<input type="search" maxLength={256} value={search}
+        <label>{t.previewSearch}<input type="search" aria-describedby="preview-scope" maxLength={256} value={search}
           onChange={event => setSearch(event.currentTarget.value)} /></label>
-        <label>{t.previewFilter}<select value={filter} onChange={event => setFilter(event.currentTarget.value as Filter)}>
+        <label>{t.previewFilter}<select aria-describedby="preview-scope" value={filter} onChange={event => setFilter(event.currentTarget.value as Filter)}>
           <option value="all">{t.allRows}</option><option value="missing">{t.withMissing}</option>
           <option value="invalid">{t.withInvalid}</option>
         </select></label>
-        <label>{t.previewSort}<select value={selectedColumn ? sort : 'source'} disabled={!selectedColumn}
+        <label>{t.previewSort}<select aria-describedby="preview-scope" value={selectedColumn ? sort : 'source'} disabled={!selectedColumn}
           onChange={event => setSort(event.currentTarget.value as Sort)}>
           <option value="source">{t.sourceOrder}</option><option value="ascending">{t.ascending}</option>
           <option value="descending">{t.descending}</option>
@@ -55,7 +55,7 @@ export function Preview({ result, locale, selected, onSelect }: {
       </div>
       <p className="muted preview-count" role="status">{t.previewRows(number(rows.length), number(result.preview.length))}</p>
       <p className="muted table-scroll-hint">{t.scrollHint}</p>
-      <div className="table-scroll preview-table" tabIndex={0} role="region" aria-label={t.preview}>
+      <div className="table-scroll preview-table" tabIndex={0} role="region" aria-label={t.previewTable}>
         <table><caption className="sr-only">{t.firstRows}</caption>
           <thead><tr><th scope="col">{t.record}</th>{result.columns.map(column =>
             <th scope="col" key={column.id} aria-sort={column.id === selected && sort !== 'source' ? sort : undefined}>

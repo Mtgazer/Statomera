@@ -104,7 +104,7 @@ export function Results({ result, locale, filename, onOverride, onStatistic, onI
       <a href="#descriptive-statistics">{statisticsTitle[locale]}</a>
       <a href="#statistical-inference">{inferenceTitle[locale]}</a>
     </nav>
-    <section id="dataset-overview" aria-labelledby="summary-title" className="panel workspace-section overview-panel">
+    <section id="dataset-overview" tabIndex={-1} aria-labelledby="summary-title" className="panel workspace-section overview-panel">
       <div className="section-heading">
         <div><h2 id="summary-title">{t.overview}</h2><p className="dataset-name"><bdi>{filename}</bdi></p></div>
         <dl className="source-meta">
@@ -126,7 +126,7 @@ export function Results({ result, locale, filename, onOverride, onStatistic, onI
     </section>
     {conversation}
     <Preview result={result} locale={locale} selected={selected} onSelect={selectColumn} />
-    <section id="dataset-quality" aria-labelledby="quality-title" className="panel workspace-section">
+    <section id="dataset-quality" tabIndex={-1} aria-labelledby="quality-title" className="panel workspace-section">
       <div className="section-heading"><h2 id="quality-title">{t.qualitySummary}</h2>
         <a href="#column-explorer">{t.explorer}</a></div>
       <div className="quality-grid">
@@ -143,7 +143,7 @@ export function Results({ result, locale, filename, onOverride, onStatistic, onI
       <p className="muted quality-context">{t.ignoredMeaning}</p>
       <QualityReports result={result} locale={locale} />
     </section>
-    <section id="column-explorer" aria-labelledby="explorer-title" className="panel workspace-section">
+    <section id="column-explorer" tabIndex={-1} aria-labelledby="explorer-title" className="panel workspace-section">
       <h2 id="explorer-title">{t.explorer}</h2>
       <p className="muted">{t.profileMethod}</p>
       <div className="table-scroll explorer-table" tabIndex={0} role="region" aria-label={t.profiles}>
