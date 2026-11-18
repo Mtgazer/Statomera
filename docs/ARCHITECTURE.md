@@ -21,6 +21,8 @@ Phase 3 builds on the same worker-owned passes. The raw-row equality map yields 
 
 Phase 4A uses the same short-lived parser worker for on-demand descriptive statistics. A fixed operation and positional column IDs are validated against the inferred or overridden schema from the same file and options. Exact binary64 accumulators and complete-pair eligibility yield one bounded result and its provenance. The worker loads the computation module on demand. See the [Phase 4A methods and evidence](PHASE_4A_REPORT.md).
 
+Phase 4B adds on-demand Student t inference to the same local worker path. Eligibility follows the active schema, paired tests align complete rows, and Welch uses disjoint values of one grouping field. Worker results carry method, counts, effect-size definition, numeric-range warnings and unavailable states. See the [Phase 4B methods and verification](PHASE_4B_REPORT.md).
+
 ## Candidate comparison
 
 Primary references reviewed 2026-11-18. Package licenses are indicative for the named project, with pinned dependency, font and model terms to be verified before adoption. Device and performance judgments are design estimates.
