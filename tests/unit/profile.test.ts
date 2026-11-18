@@ -131,3 +131,20 @@ test('schema overrides reuse strict conversions and preserve raw rejected values
   assert.equal(text.columns[0].numeric, null)
   assert.throws(() => profileDataset(dataset, () => false, undefined, { 'column-4': 'text' }), { code: 'options' })
 })
+
+test('preview quality follows full-scan typing and overrides with bounded unique counts', () => {
+  const data = normalizeCsv('label,salary\nA,10\nB,\nC,NA\nD,bad\nA,10.0\nE,30',
+    defaultCsvOptions)
+  const marked = missingPolicy(['NA'])
+  const result = profileDataset(data, marked)
+  assert.deepEqual(result.previewQuality.map(row => row[1]), ['valid', 'blank', 'marked', 'invalid', 'valid', 'valid'])
+  assert.equal(result.columns[1].distinct, 2)
+  assert.equal(result.columns[0].distinct, 5)
+  const text = profileDataset(data, marked, undefined, { 'column-2': 'text' })
+  assert.equal(text.columns[1].inferredType, 'numeric')
+  assert.equal(text.columns[1].distinct, 4)
+  assert.equal(text.previewQuality[3][1], 'valid')
+  const wideRange = profile('number\n' + Array.from({ length: 1025 }, (_, i) => i).join('\n'))
+  assert.equal(wideRange.columns[0].distinct, null)
+  assert.equal(wideRange.columns[0].numeric?.count, 1025)
+})

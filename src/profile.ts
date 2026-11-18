@@ -1,10 +1,10 @@
 import { CsvError, limits } from './csv.ts'
-import { schemaTypes } from './dataset.ts'
+import { distinctLimit, schemaTypes } from './dataset.ts'
 import type { ColumnProfile, ColumnWarning, Dataset, DatasetProfile, SchemaOverrides, SourceCell } from './dataset.ts'
 import { classify, inferType } from './infer.ts'
 import type { Evidence, TypedValue } from './infer.ts'
 import { normalizedLabel } from './normalize.ts'
-import { distinctLimit, summarizeFrequencies, summarizeNumbers } from './summaries.ts'
+import { summarizeFrequencies, summarizeNumbers } from './summaries.ts'
 
 function sourceText(cell: SourceCell) {
   return typeof cell === 'string' ? cell : cell.text
@@ -40,6 +40,7 @@ export function profileDataset(
     blank: 0,
     markedMissing: 0,
   }))
+  const previewQuality: DatasetProfile['previewQuality'] = []
   const preview: DatasetProfile['preview'] = []
   let rows = 0
   let duplicateRows = 0
@@ -60,11 +61,12 @@ export function profileDataset(
         if (!value) column.blank++
         else if (isMarker(value)) column.markedMissing++
         else if (typeof raw === 'string' || raw.kind !== 'invalid') {
-          const parsed = classifySource(raw, value, selected.has(dataset.columns[index].id))
+          const parsed = classifySource(raw, value)
           const nativeKind = typeof raw === 'string' ? undefined : raw.kind
           const evidenceType = nativeKind === 'numeric' && parsed.type === 'text' ? 'numeric' : parsed.type
           column.evidence[evidenceType]++
-          if (parsed.type === 'numeric') column.admissibleNumbers++
+          if (parsed.type === 'numeric' || (selected.get(dataset.columns[index].id) === 'numeric' &&
+              classifySource(raw, value, true).type === 'numeric')) column.admissibleNumbers++
           if (parsed.type === 'text' && parsed.warning) column.warnings.add(parsed.warning)
         }
       })
@@ -75,32 +77,39 @@ export function profileDataset(
   const columns = dataset.columns.map((column, index): ColumnProfile => {
     const { evidence, warnings, blank, markedMissing } = state[index]
     const override = selected.get(column.id) ?? null
-    const type = override ?? (column.id === salaryColumnId && dataset.source !== 'structured'
-      ? 'numeric' : inferType(evidence, warnings.has('leadingZeros')))
+    const inferredType = column.id === salaryColumnId && dataset.source !== 'structured'
+      ? 'numeric' : inferType(evidence, warnings.has('leadingZeros'))
+    const type = override ?? inferredType
     if (Object.values(evidence).filter(count => count > 0).length > 1) warnings.add('mixed')
-    return { ...column, type, override, blank, markedMissing, invalid: 0, valid: 0, rejected: [],
+    return { ...column, type, inferredType, distinct: 0, override, blank, markedMissing, invalid: 0, valid: 0, rejected: [],
       warnings: [...warnings], numeric: null, frequency: null }
   })
   // The first pass already counted every admissible numeric value. Pack only those
   // values for the exact median and avoid dynamic array capacity and boxing.
   const numbers = columns.map((column, index) => column.type === 'numeric'
     ? new Float64Array(state[index].admissibleNumbers) : null)
-  const frequencies = columns.map(column => column.type === 'text' || column.type === 'boolean'
-    ? new Map<string, number>() : null)
+  const frequencies: (Map<string, number> | null)[] = columns.map(() => new Map())
 
   let record = 0
   for (const row of dataset.records()) {
     record++
+    const quality: DatasetProfile['previewQuality'][number] | undefined = record <= preview.length ? [] : undefined
+    if (quality) previewQuality.push(quality)
     row.forEach((raw, index) => {
       const value = sourceText(raw).trim()
-      if (!value || isMarker(value)) return
+      if (!value || isMarker(value)) {
+        quality?.push(value ? 'marked' : 'blank')
+        return
+      }
       const column = columns[index]
       const parsed = column.type === 'text' ? { type: 'text' } as const : classifySource(raw, value, column.override !== null)
       if ((typeof raw !== 'string' && raw.kind === 'invalid') || (column.type !== 'text' && parsed.type !== column.type)) {
+        quality?.push('invalid')
         column.invalid++
         if (column.rejected.length < limits.rejected) column.rejected.push({ record, value: sourceText(raw) })
         return
       }
+      quality?.push('valid')
       column.valid++
       if (column.type === 'numeric' && parsed.type === 'numeric') {
         numbers[index]![column.valid - 1] = parsed.value
@@ -108,11 +117,11 @@ export function profileDataset(
       }
       const counts = frequencies[index]
       if (counts) {
-        const key = column.type === 'boolean' && parsed.type === 'boolean' ? parsed.value : value
+        const key = parsed.type === 'boolean' || parsed.type === 'numeric' ? String(parsed.value) : value
         counts.set(key, (counts.get(key) ?? 0) + 1)
         if (counts.size > distinctLimit) {
           frequencies[index] = null
-          column.warnings.push('manyCategories')
+          if (column.type === 'text' || column.type === 'boolean') column.warnings.push('manyCategories')
         }
       }
     })
@@ -122,8 +131,11 @@ export function profileDataset(
     const values = numbers[index]
     const counts = frequencies[index]
     if (values) column.numeric = summarizeNumbers(values)
-    if (counts) column.frequency = summarizeFrequencies(counts)
+    column.distinct = counts?.size ?? null
+    if (counts && (column.type === 'text' || column.type === 'boolean')) {
+      column.frequency = summarizeFrequencies(counts)
+    }
   })
 
-  return { rows, columns, preview, duplicateRows, salaryColumnId }
+  return { rows, columns, preview, previewQuality, duplicateRows, salaryColumnId }
 }

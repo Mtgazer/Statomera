@@ -35,6 +35,8 @@ export interface Dataset {
   records(): Iterable<readonly SourceCell[]>
 }
 
+export const distinctLimit = 1024
+
 export const schemaTypes = ['text', 'numeric', 'boolean', 'date'] as const
 export type SchemaType = typeof schemaTypes[number]
 export type SchemaOverrides = Readonly<Partial<Record<string, SchemaType>>>
@@ -47,8 +49,12 @@ export interface FrequencySummary {
   entries: { value: string; count: number }[]
   omitted: number
 }
+export type CellQuality = 'valid' | 'blank' | 'marked' | 'invalid'
+
 export interface ColumnProfile extends Column {
   type: ColumnType
+  inferredType: ColumnType
+  distinct: number | null
   override: SchemaType | null
   blank: number
   markedMissing: number
@@ -64,6 +70,7 @@ export interface DatasetProfile {
   rows: number
   columns: ColumnProfile[]
   preview: (readonly string[])[]
+  previewQuality: CellQuality[][]
   duplicateRows: number
   salaryColumnId: string | null
   workbook?: { names: string[]; selected: number }

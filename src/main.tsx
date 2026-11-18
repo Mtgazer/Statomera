@@ -85,6 +85,7 @@ function App() {
   }
 
   return <>
+    <a href="#workspace-main" className="skip-link">{t.skipLink}</a>
     <header className="topbar">
       <div className="topbar-inner">
         <span className="wordmark" lang="en" dir="ltr">askora</span>
@@ -102,7 +103,7 @@ function App() {
         </div>
       </div>
     </header>
-    <main>
+    <main id="workspace-main" tabIndex={-1}>
       <h1>{t.title}</h1>
       <section className="panel intake" aria-labelledby="upload-title">
         <div>
@@ -152,7 +153,7 @@ function App() {
           </div>
         </details>
         <div className="file-status">
-          {fileInfo && <p className="file-info"><bdi>{fileInfo.name}</bdi>
+          {fileInfo && status.phase !== 'complete' && <p className="file-info"><bdi>{fileInfo.name}</bdi>
             <bdi className="muted">{formatNumber(fileInfo.size, locale)} {t.bytes}</bdi></p>}
           {workbook && <label className="worksheet-select">{t.worksheet}
             <select disabled={status.phase === 'busy'} value={workbook.selected} onChange={event => {
@@ -176,7 +177,7 @@ function App() {
       </div>
       {status.phase === 'error' && status.error !== 'cancelled' &&
         <p role="alert" className="notice error">{t.errors[status.error]}</p>}
-      {status.phase === 'complete' && <Results result={status.result} locale={locale} onOverride={updateOverride} />}
+      {status.phase === 'complete' && <Results result={status.result} locale={locale} filename={fileInfo?.name ?? ''} onOverride={updateOverride} />}
     </main>
   </>
 }

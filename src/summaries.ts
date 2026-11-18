@@ -18,7 +18,6 @@ export function summarizeNumbers(values: Float64Array): NumericSummary | null {
   return { count: values.length, mean, min: values[0], max: values[values.length - 1], median }
 }
 
-export const distinctLimit = 1024
 const displayedCategories = 8
 
 export function summarizeFrequencies(frequencies: Map<string, number>): FrequencySummary {

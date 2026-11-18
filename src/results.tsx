@@ -1,15 +1,13 @@
-import { schemaTypes } from './dataset.ts'
+import { useState } from 'react'
+import { distinctLimit, schemaTypes } from './dataset.ts'
 import type { SchemaType } from './dataset.ts'
 import type { AnalysisResult } from './analysis.ts'
-import type { Column, ColumnProfile, RejectedValue } from './dataset.ts'
+import type { ColumnProfile, RejectedValue } from './dataset.ts'
 import { formatNumber, messages } from './locale.ts'
 import type { Locale } from './locale.ts'
 
-function columnLabel(column: Column, locale: Locale) {
-  const position = formatNumber(column.index + 1, locale)
-  if (column.sourceName === null) return `${messages[locale].column} ${position}`
-  return column.duplicateName ? `${column.sourceName} [${position}]` : column.sourceName
-}
+import { columnLabel } from './column-label.ts'
+import { Preview } from './preview.tsx'
 
 function Rejected({ values, locale, title }: { values: RejectedValue[]; locale: Locale; title: string }) {
   if (!values.length) return null
@@ -21,53 +19,89 @@ function Rejected({ values, locale, title }: { values: RejectedValue[]; locale: 
   </>
 }
 
-function ProfileDetails({ column, locale, salary }: { column: ColumnProfile; locale: Locale; salary: boolean }) {
+function ProfileDetails({ column, locale, salary, open, onToggle }: {
+  column: ColumnProfile; locale: Locale; salary: boolean; open: boolean; onToggle: () => void
+}) {
   const t = messages[locale]
   const number = (value: number) => formatNumber(value, locale)
   const { numeric, frequency, warnings, rejected } = column
-  if (!numeric && !frequency?.entries.length && !warnings.length && (!rejected.length || salary)) return null
 
-  return <details className="column-details">
-    <summary>{t.details}</summary>
-    {warnings.map(warning => <p className="muted" key={warning}>{t.warnings[warning]}</p>)}
-    {numeric && <dl className="profile-statistics">
-      {([['count', numeric.count], ['meanValue', numeric.mean], ['min', numeric.min],
-        ['max', numeric.max], ['median', numeric.median]] as const).map(([label, value]) =>
-        <div key={label}><dt>{t[label]}</dt><dd>{number(value)}</dd></div>,
-      )}
-    </dl>}
-    {frequency && frequency.entries.length > 0 && <>
-      <table><caption>{t.frequency}</caption>
-        <thead><tr><th scope="col">{t.value}</th><th scope="col">{t.count}</th></tr></thead>
-        <tbody>{frequency.entries.map(({ value, count }) =>
-          <tr key={value}><th scope="row"><bdi>{value}</bdi></th><td>{number(count)}</td></tr>,
-        )}</tbody>
-      </table>
-      {frequency.omitted > 0 && <p className="muted">{t.otherCategories} {number(frequency.omitted)}</p>}
+  return <details className="column-details" open={open}>
+    <summary onClick={event => { event.preventDefault(); onToggle() }}>{t.details}</summary>
+    {open && <>
+      <p className="distinct-line"><span>{t.distinctValues}</span> <strong>{column.distinct === null
+        ? t.distinctCap(number(distinctLimit)) : number(column.distinct)}</strong></p>
+      {warnings.map(warning => <p className="muted" key={warning}>{t.warnings[warning]}</p>)}
+      {numeric && <dl className="profile-statistics">
+        {([['count', numeric.count], ['meanValue', numeric.mean], ['min', numeric.min],
+          ['max', numeric.max], ['median', numeric.median]] as const).map(([label, value]) =>
+          <div key={label}><dt>{t[label]}</dt><dd>{number(value)}</dd></div>,
+        )}
+      </dl>}
+      {frequency && frequency.entries.length > 0 && <>
+        <table><caption>{t.frequency}</caption>
+          <thead><tr><th scope="col">{t.value}</th><th scope="col">{t.count}</th></tr></thead>
+          <tbody>{frequency.entries.map(({ value, count }) =>
+            <tr key={value}><th scope="row"><bdi>{value}</bdi></th><td>{number(count)}</td></tr>,
+          )}</tbody>
+        </table>
+        {frequency.omitted > 0 && <p className="muted">{t.otherCategories} {number(frequency.omitted)}</p>}
     </>}
     {!salary && <Rejected values={rejected} locale={locale} title={t.invalidExamples} />}
+    </>}
   </details>
 }
 
-export function Results({ result, locale, onOverride }: {
+export function Results({ result, locale, filename, onOverride }: {
   result: AnalysisResult
   locale: Locale
+  filename: string
   onOverride: (id: string, type: SchemaType | 'auto') => void
 }) {
   const t = messages[locale]
   const number = (value: number) => formatNumber(value, locale)
+  const [selected, setSelected] = useState<string | null>(null)
+  const [opened, setOpened] = useState<string[]>([])
+  function selectColumn(id: string) {
+    setSelected(id)
+    setOpened(ids => ids.includes(id) ? ids : [...ids, id])
+  }
+
+  const totals = result.columns.reduce((counts, column) => ({
+    missing: counts.missing + column.blank + column.markedMissing,
+    invalid: counts.invalid + column.invalid,
+    uncertain: counts.uncertain + Number(column.warnings.some(warning => warning !== 'manyCategories')),
+  }), { missing: 0, invalid: 0, uncertain: 0 })
+  const detected = [...new Set(result.columns.map(column => column.inferredType))]
+  const worksheet = result.workbook?.names[result.workbook.selected]
+  const format = filename.split('.').at(-1)?.toUpperCase()
   const salary = result.columns.find(column => column.id === result.salaryColumnId && column.type === 'numeric')
   const mean = salary?.numeric?.mean ?? null
   const metrics = [
     ['rows', t.rows, result.rows], ['columns', t.columns, result.columns.length],
     ['duplicate-rows', t.duplicateRows, result.duplicateRows],
+    ['missing-total', t.missingValues, totals.missing],
+    ['invalid-total', t.invalidCells, totals.invalid],
     ...(salary ? [['valid', t.valid, salary.valid], ['blank', t.blank, salary.blank],
       ['invalid', t.invalid, salary.invalid]] as const : []),
   ] as const
 
   return <>
-    <section aria-labelledby="summary-title" className="panel summary">
-      <h2 id="summary-title">{t.summary}</h2>
+    <nav className="workspace-nav" aria-label={t.workspaceSections}>
+      <a href="#dataset-overview">{t.overview}</a><a href="#dataset-preview">{t.preview}</a>
+      <a href="#dataset-quality">{t.qualitySummary}</a><a href="#column-explorer">{t.explorer}</a>
+    </nav>
+    <section id="dataset-overview" aria-labelledby="summary-title" className="panel workspace-section overview-panel">
+      <div className="section-heading">
+        <div><h2 id="summary-title">{t.overview}</h2><p className="dataset-name"><bdi>{filename}</bdi></p></div>
+        <dl className="source-meta">
+          <div><dt>{t.fileFormat}</dt><dd><bdi>{format}</bdi></dd></div>
+          {worksheet && <div><dt>{t.worksheet}</dt><dd><bdi>{worksheet}</bdi></dd></div>}
+        </dl>
+      </div>
+      <p className="type-line"><span>{t.detectedTypes}</span>{detected.map(type =>
+        <span key={type} className="type-tag">{t.types[type]}</span>,
+      )}</p>
       {salary && <>
         <div className="result"><span>{t.mean}</span><strong data-testid="mean"
           data-value={mean ?? undefined} data-reference-mean={result.referenceSalaryMean}>{mean === null ? t.unavailable : number(mean)}</strong></div>
@@ -77,31 +111,44 @@ export function Results({ result, locale, onOverride }: {
         <div key={id}><dt>{label}</dt><dd data-testid={id}>{number(value)}</dd></div>,
       )}</dl>
     </section>
-    <section aria-labelledby="preview-title" className="panel">
-      <h2 id="preview-title">{t.preview}</h2>
-      {result.preview.length ? <div className="table-scroll" tabIndex={0} role="region" aria-label={t.preview}>
-        <table><caption>{t.firstRows}</caption><thead><tr>{result.columns.map(column =>
-          <th scope="col" key={column.id}><bdi>{columnLabel(column, locale)}</bdi></th>,
-        )}</tr></thead><tbody>{result.preview.map((row, index) =>
-          <tr key={index}>{row.map((value, cell) => <td key={cell}><bdi>{value}</bdi></td>)}</tr>,
-        )}</tbody></table>
-      </div> : <p className="muted">{t.noRows}</p>}
+    <Preview result={result} locale={locale} selected={selected} onSelect={selectColumn} />
+    <section id="dataset-quality" aria-labelledby="quality-title" className="panel workspace-section">
+      <div className="section-heading"><h2 id="quality-title">{t.qualitySummary}</h2>
+        <a href="#column-explorer">{t.explorer}</a></div>
+      <div className="quality-grid">
+        {([
+          [t.missingValues, totals.missing, t.missingHelp],
+          [t.invalidCells, totals.invalid, t.invalidHelp],
+          [t.duplicateRows, result.duplicateRows, t.repeatedHelp],
+          [t.uncertainColumns, totals.uncertain, t.uncertainHelp],
+        ] as const).map(([label, count, help]) =>
+          <div className="quality-item" key={label}><strong>{number(count)}</strong>
+            <span>{label}</span><p className="muted">{help}</p></div>,
+        )}
+      </div>
+      <p className="muted quality-context">{t.ignoredMeaning}</p>
     </section>
-    <section aria-labelledby="quality-title" className="panel">
-      <h2 id="quality-title">{t.profiles}</h2>
-      <p className="muted">{t.profileMethod} {t.ignoredMeaning}</p>
-      <div className="table-scroll" tabIndex={0} role="region" aria-label={t.profiles}>
-        <table><thead><tr>{[t.column, t.type, t.blanks, t.marked, t.validCells, t.invalidCells, t.details, t.schemaOverride].map(label =>
-          <th scope="col" key={label}>{label}</th>,
-        )}</tr></thead><tbody>{result.columns.map(column =>
-          <tr key={column.id}>
-            <th scope="row"><bdi>{columnLabel(column, locale)}</bdi></th>
-            <td>{t.types[column.type]}</td>
+    <section id="column-explorer" aria-labelledby="explorer-title" className="panel workspace-section">
+      <h2 id="explorer-title">{t.explorer}</h2>
+      <p className="muted">{t.profileMethod}</p>
+      <div className="table-scroll explorer-table" tabIndex={0} role="region" aria-label={t.profiles}>
+        <table role="table"><thead role="rowgroup"><tr role="row">{[t.column, t.type, t.blanks, t.marked, t.validCells, t.invalidCells, t.details, t.schemaOverride].map(label =>
+          <th role="columnheader" scope="col" key={label}>{label}</th>,
+        )}</tr></thead><tbody role="rowgroup">{result.columns.map(column =>
+          <tr role="row" key={column.id} data-selected={column.id === selected || undefined}>
+            <th role="rowheader" scope="row"><button className="column-button" type="button" aria-pressed={column.id === selected}
+              onClick={() => selectColumn(column.id)}><bdi>{columnLabel(column, locale)}</bdi></button></th>
+            <td role="cell" data-label={t.type}>{t.types[column.inferredType]}</td>
             {[column.blank, column.markedMissing, column.valid, column.invalid].map((count, index) =>
-              <td key={index}>{number(count)}</td>,
+              <td role="cell" key={index} data-label={[t.blanks, t.marked, t.validCells, t.invalidCells][index]}>{number(count)}</td>,
             )}
-            <td><ProfileDetails column={column} locale={locale} salary={column === salary} /></td>
-            <td><select id={`schema-${column.id}`} className="schema-type"
+            <td role="cell"><ProfileDetails column={column} locale={locale} salary={column === salary}
+              open={opened.includes(column.id)}
+              onToggle={() => {
+                setSelected(column.id)
+                setOpened(ids => ids.includes(column.id) ? ids.filter(id => id !== column.id) : [...ids, column.id])
+              }} /></td>
+            <td role="cell" data-label={t.schemaOverride}><select id={`schema-${column.id}`} className="schema-type"
               aria-label={`${t.schemaOverride} · ${columnLabel(column, locale)}`}
               value={column.override ?? 'auto'}
               onChange={event => onOverride(column.id, event.currentTarget.value as SchemaType | 'auto')}>
