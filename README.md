@@ -1,15 +1,26 @@
 # Askora
 
-Askora is a planned bilingual conversational data analysis workspace. Users will open a dataset in their browser, inspect its quality and ask questions in English, Arabic or both. Answers will use real analytical computations and show the data and assumptions behind them.
+Askora is a bilingual conversational data analysis workspace in development. Users will open a dataset in their browser, inspect its quality and ask questions in English, Arabic or both. Answers will use real analytical computations and show the data and assumptions behind them.
 
-The first public beta targets zero project spend, with static hosting and local processing. Phase 0 contains planning documentation.
+The current Phase 1A proof opens local CSV files and verifies salary analysis in English and Arabic. The first public beta still targets zero project spend.
 
-## Local setup
+## Run the proof locally
 
-Open this directory in your editor and run `git status --short --branch` to check the active checkout. No packages, environment variables or local services are required to review Phase 0. Runtime setup and commands will be added when implementation is approved.
+Use Node.js 22.18 or newer. From the Askora repository root, run:
+
+```sh
+npm ci --ignore-scripts
+npm test
+npm run build
+npm run preview -- --host 127.0.0.1
+```
+
+Open the loopback address printed by Vite and choose `tests/fixtures/salary.csv`. Expect five records, three valid salaries, one blank, one invalid, and a mean of 20. See the [Phase 1A report](docs/PHASE_1A_REPORT.md) for the input policy, browser commands and known limits.
 
 ## Project documentation
 
+- [Phase 1A results and test commands](docs/PHASE_1A_REPORT.md)
+- [Codex skills setup](docs/CODEX_SKILLS.md)
 - [Phase 0 report and proof-of-concept plan](docs/PHASE_0_REPORT.md)
 - [Product brief and requirements matrix](docs/PROJECT_BRIEF.md)
 - [Architecture, technology comparison and hosting](docs/ARCHITECTURE.md)
