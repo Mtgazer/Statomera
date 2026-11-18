@@ -15,7 +15,7 @@ Hold datasets in volatile storage initially. Reset after cancellation by termina
 
 ## CSV profiling contract
 
-`csv.ts` owns decoding, record boundaries and delimiter discovery. `normalize.ts` turns parsed CSV into a repeatable rectangular `Dataset` with positional column IDs. `infer.ts` owns cell recognition and column type policy. `profile.ts` combines dataset, missing-marker policy and evidence, then delegates calculation to `summaries.ts` and the existing binary64 mean. `results.tsx` presents the returned `DatasetProfile` with localized values and warnings. Only the worker handles the full decoded file. See the [Phase 2A contract and limits](PHASE_2A_REPORT.md#contract-and-interpretation).
+`csv.ts` owns decoding, record boundaries and delimiter discovery. `normalize.ts` turns parsed CSV into a repeatable rectangular `Dataset` with positional column IDs. `infer.ts` owns cell recognition and column type policy. `profile.ts` combines dataset, missing-marker policy and evidence, then delegates calculation to `summaries.ts` and the existing binary64 mean. `results.tsx` presents the returned `DatasetProfile` with localized values and warnings. Only the worker handles the full decoded file. Schema overrides are validated against positional IDs and strict conversion rules. Reprofiling opens a fresh worker with the selected file and its original import options. See the [Phase 2A contract and limits](PHASE_2A_REPORT.md#contract-and-interpretation) and the [Phase 2B memory and override results](PHASE_2B_REPORT.md).
 
 ## Candidate comparison
 
