@@ -241,9 +241,76 @@ Measured indicative timings on a Linux x86_64 host across repeated interactive o
 
 ---
 
-## 13. Final QA verdict
+## 13. Initial QA verdict (prior to fix)
 
 **FAIL — FIXES REQUIRED**
 
-*Reason for verdict*:
-The functional implementation of Phase 6A (bilingual question discovery, clarification UX, dataset lifecycle resets, privacy, and responsiveness) is verified and robust. However, Phase 6A introduced a reproducible P1 regression in the automated browser regression suite (`analysis.spec.ts:18` fails in Chromium and Firefox across all 3 build targets due to Defect QA-6A-01). Per the Askora QA protocol, a PASS verdict cannot be issued while a P1 regression remains unresolved in the test suite.
+*Reason for initial verdict*:
+The functional implementation of Phase 6A (bilingual question discovery, clarification UX, dataset lifecycle resets, privacy, and responsiveness) was verified and robust. However, Phase 6A introduced a reproducible P1 regression in the automated browser regression suite (`analysis.spec.ts:18` failed in Chromium and Firefox across all 3 build targets due to Defect QA-6A-01). Per the Askora QA protocol, a PASS verdict could not be issued while that P1 regression remained in the test suite.
+
+---
+
+## 14. Final verification and resolution
+
+Independent QA resumed following Codex's resolution of Defect QA-6A-01.
+
+### 14.1 Verified Checkpoint & Codex Change
+- **Codex Fix Commit**: `d947962` (`test(analysis): scope rejected profile list assertion`)
+- **Modified Files**: Only `tests/browser/analysis.spec.ts:33`. Zero application source files were modified.
+- **Corrected Code**:
+  ```ts
+  await expect(page.locator('.rejected').getByRole('listitem')).toHaveText('Record 4 N/A')
+  ```
+  The selector is now properly scoped to `.rejected`, matching lines 318, 382, and 430 of the same file. The exact assertion string (`Record 4 N/A`) remains strictly unchanged.
+
+### 14.2 Targeted Browser Re-Verification
+All six previously failing browser configurations were independently re-executed against the corresponding build targets:
+
+| Test Target | Browser Engine | Build Mode | Duration | Result |
+| :--- | :--- | :--- | :---: | :---: |
+| `analysis.spec.ts:18` | Chromium (Channel `chrome`) | Portable (`dist-portable`) | 444 ms | **PASSED** |
+| `analysis.spec.ts:18` | Playwright Firefox 159.0 | Portable (`dist-portable`) | 1.4 s | **PASSED** |
+| `analysis.spec.ts:18` | Chromium (Channel `chrome`) | DuckDB MVP (`dist`) | 2.5 s | **PASSED** |
+| `analysis.spec.ts:18` | Playwright Firefox 159.0 | DuckDB MVP (`dist`) | 4.1 s | **PASSED** |
+| `analysis.spec.ts:18` | Chromium (Channel `chrome`) | DuckDB EH (`dist-eh`) | 2.0 s | **PASSED** |
+| `analysis.spec.ts:18` | Playwright Firefox 159.0 | DuckDB EH (`dist-eh`) | 4.1 s | **PASSED** |
+
+All six previously failing cases passed cleanly with zero strict mode violations.
+
+### 14.3 WebKit Environmental Status
+- System libraries `libevent-2.1-7t64`, `libavif16`, and `libmanette-0.2-0` were re-checked and confirmed absent on the host environment.
+- In accordance with QA instructions, no system packages were installed and no sudo commands were invoked.
+- Linux WebKit execution remains blocked as an environmental infrastructure limitation, not an application defect.
+
+### 14.4 Final Browser Suite Totals
+
+| Metric | Count | Details |
+| :--- | :---: | :--- |
+| **Total planned test cases** | 360 | 40 tests × 3 build modes × 3 browser projects |
+| **Total executed test cases** | 240 | 120 Chromium + 120 Firefox across 3 build modes |
+| **Passed test cases** | **240** | **100% pass rate** of executed cases (120/120 Chromium, 120/120 Firefox) |
+| **Failed test cases** | **0** | All 6 previous failures resolved; 0 regressions |
+| **Blocked test cases** | 120 | WebKit (blocked by host OS missing dependencies) |
+
+### 14.5 Regression and Unit Verification
+- Unit test suite: **63 passed of 63 tests** across standard and non-isolated runners.
+- Independent statistical reference tests: Verified unchanged.
+- Conversational UX suite (`tests/browser/conversation.spec.ts`): All 9 tests passed.
+- Router harness suite (`tests/browser/router.spec.ts`): All 5 tests passed.
+- Dependency audit: 0 vulnerabilities (referenced from initial verification).
+
+### 14.6 Remaining Limitations
+- **Cross-Browser Coverage**: Complete three-browser execution cannot be claimed because WebKit was blocked by environmental host dependencies.
+- **Hardware & Assistive Technology**: Physical Android/iOS mobile devices, touch gestures, and native screen readers (TalkBack, VoiceOver, NVDA) were not physically connected. Verification relies on Playwright synthetic events, DOM inspection, and ARIA tree compliance.
+
+---
+
+## 15. Final QA verdict
+
+**PASS WITH NON-BLOCKING ISSUES**
+
+*Verdict Justification*:
+1. **Feature Implementation**: The Phase 6A conversational discovery, clarification recovery, dataset lifecycle resets, privacy boundaries, and bilingual RTL/LTR layout are completely verified and fully robust.
+2. **Defect Resolution**: Defect QA-6A-01 was cleanly resolved by Codex in `d947962` without modifying application source code.
+3. **Automated Test Results**: 100% of executed browser tests (240 of 240) passed in Chromium and Firefox across Portable, DuckDB MVP, and DuckDB EH targets, and 100% of unit tests (63 of 63) passed.
+4. **Non-blocking Issues**: Linux WebKit tests were blocked strictly by host environment dynamic library availability (`libevent-2.1-7t64`, `libavif16`, `libmanette-0.2-0`), which is an environmental limitation rather than an application defect. Hardware-specific physical device and native screen reader validation remain deferred to later release milestones as documented in the roadmap.
