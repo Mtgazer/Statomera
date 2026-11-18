@@ -30,7 +30,7 @@ test('local picker flow, identical bilingual results and theme switch on a narro
     await expect(page.getByTestId(metric)).toHaveText(count)
   }
   await expect(page.getByRole('heading', { name: 'Examples of invalid salaries' })).toBeVisible()
-  await expect(page.getByRole('listitem')).toHaveText('Record 4 N/A')
+  await expect(page.locator('.rejected').getByRole('listitem')).toHaveText('Record 4 N/A')
 
   await page.getByLabel('Theme').selectOption('light')
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
