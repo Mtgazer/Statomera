@@ -1,17 +1,17 @@
-# Proposed architecture
+# Architecture
 
-Use a static React application with strict TypeScript and Vite. Use plain CSS logical properties and shared tokens initially. For the initial CSV slice, Phase 1B recommends the portable TypeScript worker build. It shares the parser and result contract with the single-threaded DuckDB-Wasm reference builds. Keep DuckDB under evaluation for broader operations and formats such as Parquet. The portable worker uses bounded CSV records and a generic profiling contract. It detects missing and invalid values, repeated rows and basic per-column summaries. See the [Phase 1B measurements](PHASE_1B_REPORT.md).
+Askora is a static React application with strict TypeScript, Vite and shared CSS tokens. The portable TypeScript build processes bounded CSV, JSON and XLSX locally in browser workers. The DuckDB-Wasm builds remain reference builds. The dataset profile and verified statistical operations supply all analytical evidence. [Phase 1B measurements](PHASE_1B_REPORT.md) · [Phase 2C ingestion contracts](PHASE_2C_REPORT.md)
 
 ## Data and execution boundaries
 
 1. React owns the file picker, locale, accessible dataset preview and conversation. Set document language and direction, isolate original labels with bidi markup, format values at presentation time and retain canonical values for computation.
 2. The ingestion worker validates file budgets, parses into a staged dataset, retains source text where inference could be lossy, and assigns internal dataset and column IDs. Publish only after validation. Stream or page results and transfer bounded buffers when appropriate.
 3. Profile the staged data. Record observed nulls, policy-derived missing values, invalid conversions, and ambiguous schemas separately. Version schema and missing rules so recomputation is traceable.
-4. An interpreter produces a typed intent such as operation ID, dataset revision, column IDs and bounded options. Start with deterministic bilingual intents and equivalent direct controls. Match Arabic-normalized aliases on a separate index, preserve original labels and clarify collisions. Reject unsupported actions and stale or invalid IDs.
-5. A tool registry defines allowed operations, input and output schemas, eligibility and resource ceilings. Execute fixed templates and bind values. Map columns to generated identifiers. Return typed values, units when known, counts and exclusions, method/version, filters, assumptions, warnings and exactness. Track dataset revision and cancel outstanding work on replacement.
-6. Localized result templates and chart adapters consume only verified evidence. Sampling for charts or profiling must be labeled, including the method and sample size. An optional interpreter can propose intents but has no authority to execute code or provide numerical facts.
+4. The deterministic bilingual parser is the production authority for question interpretation. It receives the question and active schema metadata, then returns a typed intent, clarification or refusal. Users can also select operations directly. Column aliases preserve the original source labels and ambiguous matches require clarification.
+5. The validated analysis router checks the active dataset revision, column IDs, types and bounded parameters against a closed operation list before execution. The profile and verified statistical engines in local workers produce results, counts, exclusions, methods, assumptions and warnings. Replacement invalidates pending work.
+6. Localized result templates and chart adapters consume verified evidence. Bounded previews and sampled chart results identify their scope.
 
-Hold datasets in volatile storage initially. Reset after cancellation by terminating a stuck worker and clearing its session. Restore only through explicit re-import. Cloud inference or shared workspaces would require an approved backend for secret protection, consent, authentication and quotas. The beta core has no such dependency.
+Dataset and conversation state are kept in memory. The workspace retires worker jobs on cancellation and replacement. Reopening a dataset requires explicit re-import.
 
 ## Dataset ingestion and profiling contract
 
@@ -33,6 +33,16 @@ Phase 5C mounts a localized conversation panel for the published dataset revisio
 
 Phase 5D binds workspace rendering to the session’s published snapshot. Clearing a dataset unmounts the result panels and aborts the current conversation. The composer rejects oversized questions before submission. See the [Phase 5D report](PHASE_5D_REPORT.md).
 
+## Optional AI research policy
+
+**AI is optional. Core Askora must work without a model.** The deterministic parser remains authoritative for production intent, and verified profiles and statistical engines are the exclusive source of numerical results. The Phase 6C experiment is complete with a production no-go. Local AI integration is deferred. [Phase 6C closure](PHASE_6C_CLOSURE.md)
+
+Future experiments require separate approval and stay isolated from production imports, dependencies, builds and data paths until they independently pass the gates below. Evaluate candidates for measurable gains in user efficiency, intent understanding, Standard and Egyptian Arabic, ease of use and overall experience.
+
+- Match or exceed the deterministic baseline on the relevant benchmark and correctly reject unsupported requests.
+- Preserve strict validation of intent, schema, operation eligibility, revision and parameters. Model output can propose an intent only. Numerical evidence continues to come from the verified engines.
+- Demonstrate acceptable latency, memory, download cost and device behavior. Verify privacy compatibility with browser-local processing and Askora's data boundaries.
+
 ## Candidate comparison
 
 Primary references reviewed 2026-11-18. Package licenses are indicative for the named project, with pinned dependency, font and model terms to be verified before adoption. Device and performance judgments are design estimates.
@@ -48,7 +58,7 @@ Primary references reviewed 2026-11-18. Package licenses are indicative for the 
 | ECharts, Apache-2.0, or Plotly.js, MIT | Prefer a modular ECharts trial for core charts with capped marks and canvas/SVG options. Plotly offers useful scientific trace types, with bundles and interaction cost to measure. Benchmark chosen builds on touch devices and test Arabic labels, bidi tooltips, keyboard access and tabular equivalents. | [ECharts project](https://github.com/apache/echarts) · [Plotly.js project](https://github.com/plotly/plotly.js) |
 | IndexedDB | Defer raw storage. Can retain sizable structured data asynchronously, but quota, eviction, cleanup and migration are browser-dependent. If adopted, start with opt-in settings or metadata and measure writes, device pressure and failed upgrades. | [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) |
 | Web Workers | Recommend to keep parsing and analytics off the UI thread. Transfer data or send small results to reduce copying. Workers can make network requests and share the browser's device memory constraints. Test cancellation, mobile suspend and worker error recovery. | [Web Workers](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API) |
-| WebGPU and WebLLM, Apache-2.0 runtime | Optional. Feature-detect usable adapters and handle device loss. Model weights and context increase storage, GPU memory and first-use downloads. Measure Arabic and mixed-language intent quality and test on actual Android. Review weight licenses separately. Direct and deterministic controls remain available. | [WebGPU](https://developer.mozilla.org/en-US/docs/Web/API/WebGPU_API) · [WebLLM](https://github.com/mlc-ai/web-llm) |
+| WebGPU and WebLLM, Apache-2.0 runtime | Deferred, isolated research only. Feature-detect usable adapters and handle device loss. Model weights and context increase storage, GPU memory and first-use downloads. Measure Arabic and mixed-language intent quality and test on actual Android. Review weight licenses separately. Direct and deterministic controls remain available. | [WebGPU](https://developer.mozilla.org/en-US/docs/Web/API/WebGPU_API) · [WebLLM](https://github.com/mlc-ai/web-llm) |
 | PWA platform APIs | Phase 7 candidate. HTTPS, manifest and versioned app-shell caching can improve repeat access. Install affordances and storage behavior vary by browser and Android device. Test update, rollback and offline cache, excluding datasets. | [PWA guide](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps) |
 
 Browser APIs have no application package license. All browser candidates can run without paid compute if their pinned assets fit the host and device limits. Use a restrictive worker CSP and avoid remote extension loading. DuckDB's native Excel extension documents XLSX parsing, while the Wasm extension page describes Excel-like formatting. Prove XLSX behavior in the pinned browser distribution, or evaluate a separately maintained browser XLSX adapter. Similarly verify bundled/local Parquet and JSON dependencies, codecs and types. [Native Excel docs](https://duckdb.org/docs/current/core_extensions/excel) · [Wasm extension docs](https://duckdb.org/docs/api/wasm/extensions)
