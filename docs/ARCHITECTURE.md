@@ -27,6 +27,8 @@ Phase 4C renders local SVG charts from verified column and inference profiles. P
 
 Phase 5A adds an isolated bilingual question parser. It accepts only question text and projected column metadata, returning a resolved intent, clarification, or unsupported reason. The parser has no connection to analysis execution or the workspace at this checkpoint. See the [Phase 5A contract and verification](PHASE_5A_REPORT.md).
 
+Phase 5B binds prepared questions to the active in-memory dataset revision, validates candidates against a closed route list and reuses verified profile and worker evidence. The router invalidates pending work on session changes and defers presentation to Phase 5C. An isolated browser harness exercises the same workspace lifecycle. See the [Phase 5B router and verification](PHASE_5B_REPORT.md).
+
 ## Candidate comparison
 
 Primary references reviewed 2026-11-18. Package licenses are indicative for the named project, with pinned dependency, font and model terms to be verified before adoption. Device and performance judgments are design estimates.
