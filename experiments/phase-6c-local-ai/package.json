@@ -1,0 +1,15 @@
+{
+  "name": "askora-phase-6c-local-ai",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "download": "node download.mjs",
+    "build": "node ../phase-6b-local-ai/evaluate.mjs prompt en-01 | node prepare.mjs && node ../../node_modules/vite/bin/vite.js build",
+    "serve": "node serve.mjs",
+    "measure": "node measure.mjs"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "4.2.0",
+    "onnxruntime-web": "1.26.0-dev.20260416-b7804b056c"
+  }
+}

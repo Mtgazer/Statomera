@@ -1,0 +1,36 @@
+{
+  "repository": "onnx-community/Qwen3-0.6B-ONNX",
+  "revision": "558750086ed49d78cb701ed6fa85af33fd16453f",
+  "files": [
+    {
+      "path": "config.json",
+      "bytes": 912,
+      "gitBlob": "5618bd85d36283349a0cb4a99ab15454691f355b"
+    },
+    {
+      "path": "generation_config.json",
+      "bytes": 219,
+      "gitBlob": "f0e014517edce509b5d5f07cfa4855d79fad3bcf"
+    },
+    {
+      "path": "tokenizer.json",
+      "bytes": 9117040,
+      "gitBlob": "6c0f4b0f97c638fb9b293aaa8bf99a159e650ed0"
+    },
+    {
+      "path": "tokenizer_config.json",
+      "bytes": 9705,
+      "gitBlob": "7ea8b974de6450e023f8e4977a8b7f30902cc3be"
+    },
+    {
+      "path": "chat_template.jinja",
+      "bytes": 4116,
+      "gitBlob": "699ff8df401fe4788525e9c1f9b86a99eadd6230"
+    },
+    {
+      "path": "onnx/model_q4f16.onnx",
+      "bytes": 569789750,
+      "sha256": "9e33a5911974174761d0dfdcc0bec975d9c45af0eae5e9eb647b8ba9442a8f91"
+    }
+  ]
+}

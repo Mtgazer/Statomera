@@ -1,0 +1,16 @@
+:root { color-scheme: dark; font: 16px/1.5 system-ui, sans-serif; color: #f5f7fa; background: #141617; }
+body { margin: 0; }
+main { max-width: 54rem; margin-inline: auto; padding: 1.25rem; }
+h1 { margin-block: .5rem; font-size: 1.6rem; }
+h2 { font-size: 1.15rem; margin-block: 0 .75rem; }
+section { margin-block: 1rem; padding: 1rem; background: #242627; border: 1px solid #4d5558; border-radius: .6rem; }
+label { display: block; margin-block: .65rem .25rem; }
+select, textarea, button { font: inherit; padding: .45rem; max-width: 100%; min-height: 2.7rem; }
+textarea { display: block; box-sizing: border-box; width: 100%; margin-block-end: .7rem; }
+button { border-radius: .35rem; border: 1px solid #829096; background: #373c3f; }
+button:enabled { cursor: pointer; }
+button:disabled { opacity: .5; }
+:focus-visible { outline: .15rem solid #d6b56e; outline-offset: .2rem; }
+.controls { display: flex; gap: .5rem; flex-wrap: wrap; margin-block-start: .75rem; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+#output { padding: .75rem; min-height: 3rem; background: #141617; }

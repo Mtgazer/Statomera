@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Askora · Local Qwen3 experiment</title>
+</head>
+<body>
+  <main>
+    <h1>Askora · Local Qwen3 experiment</h1>
+    <p>Qwen3-0.6B Q4F16 processes synthetic questions on this computer. Outputs are intent proposals.</p>
+    <section aria-labelledby="model-heading">
+      <h2 id="model-heading">Model</h2>
+      <p id="availability" role="status">Checking local model files…</p>
+      <label for="backend">Execution backend</label>
+      <select id="backend">
+        <option value="webgpu">WebGPU only</option>
+        <option value="webgpu-hybrid">WebGPU with ORT CPU helper nodes</option>
+        <option value="wasm">WASM CPU fallback</option>
+      </select>
+      <div class="controls">
+        <button id="load" disabled>Load model</button>
+        <button id="unload" disabled>Unload model</button>
+        <button id="cancel" disabled>Cancel work</button>
+      </div>
+      <p id="status" role="status">Model unloaded</p>
+      <details><summary>WebGPU capability</summary><pre id="capability">Probe runs when loading with WebGPU.</pre></details>
+    </section>
+    <section aria-labelledby="question-heading">
+      <h2 id="question-heading">Synthetic question</h2>
+      <label for="case">Benchmark case</label>
+      <select id="case"></select>
+      <label for="question">Question text</label>
+      <textarea id="question" readonly dir="auto" rows="3"></textarea>
+      <button id="run" disabled>Run question</button>
+    </section>
+    <section aria-labelledby="output-heading">
+      <h2 id="output-heading">Generated output</h2>
+      <p id="validation" role="status">Awaiting a result</p>
+      <pre id="output" dir="auto"></pre>
+      <pre id="metrics"></pre>
+      <p id="memory"></p>
+    </section>
+  </main>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
