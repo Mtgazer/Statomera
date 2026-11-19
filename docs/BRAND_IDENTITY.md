@@ -21,13 +21,14 @@ The descriptor is **Statistical Data Intelligence**. The identity communicates s
 
 ### Symbol Geometry
 The symbol contains:
-- A smooth, elegant **gold arched curve** above the wordmark with a wide, flowing, premium sculpted shape.
-- An upper crest fold sculpt in Soft Gold reflecting architectural lighting.
-- Three vertical elements centered and balanced inside the arch:
-  - **Center element**: Tall tapered spindle in Champagne Gold (`#D6A95C` / `#FFF6E5`), rising toward the crest.
-  - **Left and right elements**: Shorter rounded capsules in Silver Grey (`#BEC3CC` / `#E2E6ED`).
-- **Wordmark**: Bold, clean, premium uppercase **STATOMERA** in Soft Ivory (`#FAF6EE`).
-- **Descriptor**: **Statistical Data Intelligence** in Silver Grey (`#A8B0B9`), centered beneath the wordmark and flanked by thin decorative gold horizontal lines (`#D6A95C`).
+- A smooth, elegant **gold arch** above the wordmark (`#F0C167` in dark, `#D7AF6A` in light).
+- Three simple vertical rounded elements inside the arch:
+  - **Center element**: One taller gold rounded capsule (`#F0C167` / `#D7AF6A`).
+  - **Side elements**: Two shorter silver-gray rounded capsules (`#CCCCCC` in dark, `#8E95A5` in light).
+- **Wordmark**: Bold uppercase **STATOMERA** in Soft White / Warm Ivory (`#FFFFFF` on dark, `#161A22` on light).
+- **Descriptor**: **Statistical Data Intelligence** in Silver Grey (`#CBD5E1` on dark, `#5A6578` on light), centered beneath the wordmark.
+- **Flanking lines**: Thin gold horizontal lines on both sides of the descriptor (`#F0C167` / `#D7AF6A`).
+- Flat, clean, SVG-friendly geometry without glow, blur, gradients, metallic effects, shadows, or decorative complexity.
 
 ---
 
