@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import type { ReactNode } from 'react'
 import { position } from './chart-scale.ts'
 import type { Domain } from './chart-scale.ts'
@@ -46,8 +46,8 @@ const xAt = (value: number, domain: Domain) => left + (right - left) * position(
 const yAt = (value: number, domain: Domain) => bottom - (bottom - top) * position(value, domain)
 const number = (value: number, locale: Locale) => formatNumber(value, locale, 17)
 
-function Plot({ name, height = 152, children }: { name: string; height?: number; children: ReactNode }) {
-  return <svg className="chart-plot" viewBox={`0 0 400 ${height}`} role="img" aria-label={name}>
+function Plot({ name, description, height = 152, children }: { name: string; description?: string; height?: number; children: ReactNode }) {
+  return <svg className="chart-plot" viewBox={`0 0 400 ${height}`} role="img" aria-label={name} aria-describedby={description}>
     {children}
   </svg>
 }
@@ -68,6 +68,7 @@ export function DistributionCharts({ numeric, quality, locale }: {
 }) {
   const t = copy[locale]
   const domain: Domain = [numeric.min, numeric.max]
+  const summary = useId()
   const { box, bins, outliers } = quality
   const countMax = Math.max(...bins.map(({ count }) => count))
   const q1 = xAt(box.q1, domain)
@@ -81,8 +82,8 @@ export function DistributionCharts({ numeric, quality, locale }: {
   return <div className="distribution-charts">
     <figure className="chart">
       <figcaption>{t.histogram}</figcaption>
-      <p className="chart-legend">{t.count} · <bdi>{number(0, locale)} – {number(countMax, locale)}</bdi></p>
-      <Plot name={t.histogram}>
+      <p id={`${summary}-histogram`} className="chart-legend">{t.count} · <bdi>{number(0, locale)} – {number(countMax, locale)}</bdi></p>
+      <Plot name={t.histogram} description={`${summary}-histogram`}>
         <path className="chart-axis" d={`M${left} ${top}V${bottom}H${right} M${left} ${top}H${right}`} />
         {bins.map(({ upper, count }, index) => {
           const x1 = xAt(index ? bins[index - 1].upper : numeric.min, domain)
@@ -97,7 +98,7 @@ export function DistributionCharts({ numeric, quality, locale }: {
     </figure>
     <figure className="chart">
       <figcaption>{t.box}</figcaption>
-      <Plot name={t.box} height={66}>
+      <Plot name={t.box} description={`${summary}-box`} height={66}>
         <path className="chart-axis" d={`M${left} 58H${right}`} />
         <line className="chart-line" x1={a} x2={z} y1="32" y2="32" />
         <EndCap x={a} y={32} /><EndCap x={z} y={32} />
@@ -109,7 +110,7 @@ export function DistributionCharts({ numeric, quality, locale }: {
         })}
       </Plot>
       <HorizontalRange domain={domain} locale={locale} />
-      <p className="chart-legend">{assessed ? t.whiskers : t.unassessed} {marks.length > 0 && t.flagged}</p>
+      <p id={`${summary}-box`} className="chart-legend">{assessed ? t.whiskers : t.unassessed} {marks.length > 0 && t.flagged}</p>
       <dl className="chart-keys">
         {([[t.low, box.lowWhisker], [t.q1, box.q1], [t.median, numeric.median], [t.q3, box.q3], [t.high, box.highWhisker]] as const)
           .map(([label, value]) => <div key={label}><dt>{label}</dt><dd><bdi>{number(value, locale)}</bdi></dd></div>)}
@@ -129,6 +130,8 @@ export function ScatterChart({ data, total, labels, locale }: {
 }) {
   const t = copy[locale]
   const [table, setTable] = useState(false)
+  const legend = useId()
+  const axes = useId()
   const names = [t.xAxis, t.yAxis] as const
   const most = data.kind === 'density' ? Math.max(...data.cells.map(({ count }) => count)) : 0
   const cellRange = (index: number, edges: number[], min: number) => {
@@ -138,8 +141,8 @@ export function ScatterChart({ data, total, labels, locale }: {
   }
   return <figure className="chart chart-scatter">
     <figcaption>{t.scatter}</figcaption>
-    <p className="chart-legend"><bdi>{number(total, locale)}</bdi> {t.pairs} · {data.kind === 'points' ? t.points : t.density}</p>
-    <Plot name={t.scatter} height={212}>
+    <p id={legend} className="chart-legend"><bdi>{number(total, locale)}</bdi> {t.pairs} · {data.kind === 'points' ? t.points : t.density}</p>
+    <Plot name={t.scatter} description={`${legend} ${axes}`} height={212}>
       <path className="chart-axis" d={`M${left} ${top}V200H${right}`} />
       {data.kind === 'points' ? data.points.map(([x, y], index) =>
         <circle key={index} className="chart-point" cx={xAt(x, data.x)}
@@ -153,7 +156,7 @@ export function ScatterChart({ data, total, labels, locale }: {
       })}
     </Plot>
     <HorizontalRange domain={data.x} locale={locale} />
-    <dl className="chart-keys">
+    <dl id={axes} className="chart-keys">
       <div><dt>{names[0]}</dt><dd><bdi>{labels[0]}</bdi></dd></div>
       <div><dt>{names[1]}</dt><dd><bdi>{labels[1]}</bdi> · <bdi>{number(data.y[0], locale)}{data.y[0] !== data.y[1] &&
         ` – ${number(data.y[1], locale)}`}</bdi></dd></div>
@@ -180,7 +183,7 @@ export function ScatterChart({ data, total, labels, locale }: {
   </figure>
 }
 
-export function IntervalChart({ result, level, locale }: { result: InferenceResult; level: string; locale: Locale }) {
+export function IntervalChart({ result, level, locale, description }: { result: InferenceResult; level: string; locale: Locale; description: string }) {
   const t = copy[locale]
   const { interval, estimate } = result
   if (!interval) return null
@@ -190,7 +193,7 @@ export function IntervalChart({ result, level, locale }: { result: InferenceResu
   const a = xAt(domain[0], domain)
   const b = xAt(domain[1], domain)
   return <figure className="chart chart-interval">
-    <Plot name={`${t.interval} ${level}`} height={60}>
+    <Plot name={`${t.interval} ${level}`} description={description} height={60}>
       <path className="chart-axis" d={`M${left} 50H${right}`} />
       <line className="chart-line" x1={a} x2={b} y1="26" y2="26" />
       <EndCap x={a} y={26} /><EndCap x={b} y={26} />

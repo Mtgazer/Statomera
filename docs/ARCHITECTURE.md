@@ -33,6 +33,8 @@ Phase 5C mounts a localized conversation panel for the published dataset revisio
 
 Phase 5D binds workspace rendering to the session’s published snapshot. Clearing a dataset unmounts the result panels and aborts the current conversation. The composer rejects oversized questions before submission. See the [Phase 5D report](PHASE_5D_REPORT.md).
 
+Phase 7B assembles the analytical report in the active dataset workspace. A selected column and one finding from each of the statistics, inference, and conversation panels reuse the existing evidence renderers. The report keeps references to those results for the active revision and displays each operation’s returned eligibility and exclusion counts. Chart views load on demand from a shared SVG module, with numerical evidence available if a chart asset fails to load. [Phase 7B implementation](PHASE_7B_IMPLEMENTATION.md)
+
 ## Optional AI research policy
 
 **AI is optional. Core Askora must work without a model.** The deterministic parser remains authoritative for production intent, and verified profiles and statistical engines are the exclusive source of numerical results. The Phase 6C experiment is complete with a production no-go. Local AI integration is deferred. [Phase 6C closure](PHASE_6C_CLOSURE.md)

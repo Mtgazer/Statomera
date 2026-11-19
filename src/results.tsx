@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { conversationCopy } from './conversation/copy.ts'
 import { useState } from 'react'
-import { distinctLimit, schemaTypes } from './dataset.ts'
+import { schemaTypes } from './dataset.ts'
 import type { SchemaType } from './dataset.ts'
 import type { AnalysisResult } from './analysis.ts'
 import type { ColumnProfile, RejectedValue } from './dataset.ts'
@@ -9,12 +9,14 @@ import { formatNumber, messages } from './locale.ts'
 import type { Locale } from './locale.ts'
 
 import { columnLabel } from './column-label.ts'
-import { ColumnQuality, QualityReports } from './quality-results.tsx'
+import { ColumnQuality, ColumnSummary, QualityReports } from './quality-results.tsx'
 import { InferencePanel, inferenceTitle } from './inference-panel.tsx'
 import type { RunInference } from './inference-panel.tsx'
 import { StatisticsPanel, statisticsTitle } from './statistics-panel.tsx'
 import type { RunStatistic } from './statistics-panel.tsx'
 import { Preview } from './preview.tsx'
+import { Report } from './report.tsx'
+import type { ReportFindings, ReportQuestion } from './report.tsx'
 
 function Rejected({ values, locale, title }: { values: RejectedValue[]; locale: Locale; title: string }) {
   if (!values.length) return null
@@ -29,33 +31,12 @@ function Rejected({ values, locale, title }: { values: RejectedValue[]; locale: 
 function ProfileDetails({ column, rows, locale, salary, open, onToggle }: {
   column: ColumnProfile; rows: number; locale: Locale; salary: boolean; open: boolean; onToggle: () => void
 }) {
-  const t = messages[locale]
-  const number = (value: number) => formatNumber(value, locale)
-  const { numeric, frequency, warnings, rejected } = column
-
   return <details className="column-details" open={open}>
-    <summary onClick={event => { event.preventDefault(); onToggle() }}>{t.details}</summary>
+    <summary onClick={event => { event.preventDefault(); onToggle() }}>{messages[locale].details}</summary>
     {open && <>
-      <p className="distinct-line"><span>{t.distinctValues}</span> <strong>{column.distinct === null
-        ? t.distinctCap(number(distinctLimit)) : number(column.distinct)}</strong></p>
-      {warnings.map(warning => <p className="muted" key={warning}>{t.warnings[warning]}</p>)}
-      {numeric && <dl className="profile-statistics">
-        {([['count', numeric.count], ['meanValue', numeric.mean], ['min', numeric.min],
-          ['max', numeric.max], ['median', numeric.median]] as const).map(([label, value]) =>
-          <div key={label}><dt>{t[label]}</dt><dd>{number(value)}</dd></div>,
-        )}
-      </dl>}
-      {frequency && frequency.entries.length > 0 && <>
-        <table><caption>{t.frequency}</caption>
-          <thead><tr><th scope="col">{t.value}</th><th scope="col">{t.count}</th></tr></thead>
-          <tbody>{frequency.entries.map(({ value, count }) =>
-            <tr key={value}><th scope="row"><bdi>{value}</bdi></th><td>{number(count)}</td></tr>,
-          )}</tbody>
-        </table>
-        {frequency.omitted > 0 && <p className="muted">{t.otherCategories} {number(frequency.omitted)}</p>}
-    </>}
-    <ColumnQuality column={column} rows={rows} locale={locale} />
-    {!salary && <Rejected values={rejected} locale={locale} title={t.invalidExamples} />}
+      <ColumnSummary column={column} locale={locale} />
+      <ColumnQuality column={column} rows={rows} locale={locale} />
+      {!salary && <Rejected values={column.rejected} locale={locale} title={messages[locale].invalidExamples} />}
     </>}
   </details>
 }
@@ -64,7 +45,7 @@ export function Results({ result, locale, filename, onOverride, onStatistic, onI
   result: AnalysisResult
   locale: Locale
   filename: string
-  conversation: ReactNode
+  conversation: (onReport: (question?: ReportQuestion) => void, reported?: ReportQuestion) => ReactNode
   onInference: RunInference
   onStatistic: RunStatistic
   onOverride: (id: string, type: SchemaType | 'auto') => void
@@ -73,16 +54,24 @@ export function Results({ result, locale, filename, onOverride, onStatistic, onI
   const number = (value: number) => formatNumber(value, locale)
   const [selected, setSelected] = useState<string | null>(null)
   const [opened, setOpened] = useState<string[]>([])
+  const [findings, setFindings] = useState<ReportFindings>({})
+  const [reportNotice, setReportNotice] = useState<'added' | 'cleared'>()
+  function addFinding(finding: ReportFindings) {
+    setFindings(previous => ({ ...previous, ...finding }))
+    setReportNotice(finding.statistic || finding.inference || finding.question ? 'added' : undefined)
+  }
   function selectColumn(id: string) {
     setSelected(id)
     setOpened(ids => ids.includes(id) ? ids : [...ids, id])
   }
 
   const totals = result.columns.reduce((counts, column) => ({
-    missing: counts.missing + column.blank + column.markedMissing,
+    blank: counts.blank + column.blank,
+    marked: counts.marked + column.markedMissing,
     invalid: counts.invalid + column.invalid,
     uncertain: counts.uncertain + Number(column.warnings.some(warning => warning !== 'manyCategories')),
-  }), { missing: 0, invalid: 0, uncertain: 0 })
+  }), { blank: 0, marked: 0, invalid: 0, uncertain: 0 })
+  const missing = totals.blank + totals.marked
   const detected = [...new Set(result.columns.map(column => column.inferredType))]
   const worksheet = result.workbook?.names[result.workbook.selected]
   const format = filename.split('.').at(-1)?.toUpperCase()
@@ -91,7 +80,7 @@ export function Results({ result, locale, filename, onOverride, onStatistic, onI
   const metrics = [
     ['rows', t.rows, result.rows], ['columns', t.columns, result.columns.length],
     ['duplicate-rows', t.duplicateRows, result.duplicateRows],
-    ['missing-total', t.missingValues, totals.missing],
+    ['missing-total', t.missingValues, missing],
     ['invalid-total', t.invalidCells, totals.invalid],
     ...(salary ? [['valid', t.valid, salary.valid], ['blank', t.blank, salary.blank],
       ['invalid', t.invalid, salary.invalid]] as const : []),
@@ -103,6 +92,7 @@ export function Results({ result, locale, filename, onOverride, onStatistic, onI
       <a href="#dataset-quality">{t.qualitySummary}</a><a href="#column-explorer">{t.explorer}</a>
       <a href="#descriptive-statistics">{statisticsTitle[locale]}</a>
       <a href="#statistical-inference">{inferenceTitle[locale]}</a>
+      <a href="#analytical-report">{t.reportTitle}</a>
     </nav>
     <section id="dataset-overview" tabIndex={-1} aria-labelledby="summary-title" className="panel workspace-section overview-panel">
       <div className="section-heading">
@@ -124,14 +114,14 @@ export function Results({ result, locale, filename, onOverride, onStatistic, onI
         <div key={id}><dt>{label}</dt><dd data-testid={id}>{number(value)}</dd></div>,
       )}</dl>
     </section>
-    {conversation}
+    {conversation(question => addFinding({ question }), findings.question)}
     <Preview result={result} locale={locale} selected={selected} onSelect={selectColumn} />
     <section id="dataset-quality" tabIndex={-1} aria-labelledby="quality-title" className="panel workspace-section">
       <div className="section-heading"><h2 id="quality-title">{t.qualitySummary}</h2>
         <a href="#column-explorer">{t.explorer}</a></div>
       <div className="quality-grid">
         {([
-          [t.missingValues, totals.missing, t.missingHelp],
+          [t.missingValues, missing, t.missingHelp],
           [t.invalidCells, totals.invalid, t.invalidHelp],
           [t.duplicateRows, result.duplicateRows, t.repeatedHelp],
           [t.uncertainColumns, totals.uncertain, t.uncertainHelp],
@@ -175,7 +165,12 @@ export function Results({ result, locale, filename, onOverride, onStatistic, onI
       </div>
       {salary && <Rejected values={salary.rejected} locale={locale} title={t.rejected} />}
     </section>
-    <StatisticsPanel columns={result.columns} locale={locale} onRun={onStatistic} />
-    <InferencePanel columns={result.columns} locale={locale} onRun={onInference} />
+    <StatisticsPanel columns={result.columns} locale={locale} onRun={onStatistic} reported={findings.statistic} onReport={statistic => addFinding({ statistic })} />
+    <InferencePanel columns={result.columns} locale={locale} onRun={onInference} reported={findings.inference} onReport={inference => addFinding({ inference })} />
+    <Report dataset={result} filename={filename} format={format} worksheet={worksheet} counts={totals} locale={locale}
+      findings={findings} onClear={() => { setFindings({}); setReportNotice('cleared') }} />
+    <p className="sr-only" aria-live="polite" aria-atomic="true">
+      {reportNotice === 'added' ? t.reportAdded : reportNotice === 'cleared' ? t.reportCleared : ''}
+    </p>
   </>
 }

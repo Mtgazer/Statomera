@@ -1,8 +1,10 @@
+import { ReportAction } from '../report-action.tsx'
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { DatasetRevision, DatasetSession } from '../dataset-session.ts'
 import { questionLimit } from '../intent/columns.ts'
 import { formatNumber } from '../locale.ts'
 import type { Locale } from '../locale.ts'
+import type { ReportQuestion } from '../report.tsx'
 import type { AnalysisExecution } from '../router/contract.ts'
 import { createAnalysisRouter } from '../router/execute.ts'
 import { ConversationAnswer, replyLabel } from './answer.tsx'
@@ -12,8 +14,8 @@ import { questionExamples } from './examples.ts'
 const turnLimit = 24
 type Turn = { id: number; question: string; reply?: AnalysisExecution }
 
-export function ConversationPanel({ session, revision, locale }: {
-  session: DatasetSession; revision: DatasetRevision; locale: Locale
+export function ConversationPanel({ session, revision, locale, onReport, reported }: {
+  session: DatasetSession; revision: DatasetRevision; locale: Locale; onReport: (question?: ReportQuestion) => void; reported?: ReportQuestion
 }) {
   const [router] = useState(() => createAnalysisRouter(session))
   const [draft, setDraft] = useState('')
@@ -81,6 +83,7 @@ export function ConversationPanel({ session, revision, locale }: {
     setBusy(false)
     setCleared(true)
     setTurns([])
+    onReport()
     setDraft('')
     input.current?.focus()
   }
@@ -97,6 +100,8 @@ export function ConversationPanel({ session, revision, locale }: {
           <div className="conversation-reply" data-state={reply?.status ?? 'pending'}>
             <span className="conversation-speaker">{t.answer}</span>
             {reply ? <ConversationAnswer result={reply} locale={locale} /> : <p>{t.working}</p>}
+            {(reply?.status === 'completed' || reply?.status === 'unavailable') &&
+              <ReportAction locale={locale} added={reply === reported} onAdd={() => onReport(reply)} />}
             {id === latestId && (reply?.status === 'needs_clarification' || reply?.status === 'unsupported' ||
               reply?.status === 'cancelled' || (reply?.status === 'failed' && reply.stage === 'execution')) &&
               <button type="button" disabled={busy} onClick={() => edit(question)}>{t.editQuestion}</button>}

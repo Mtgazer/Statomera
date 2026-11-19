@@ -53,7 +53,7 @@ export function replyLabel(result: AnalysisExecution, locale: Locale) {
     : result.status === 'needs_clarification' ? t.clarification : t[result.status]
 }
 
-export function ConversationAnswer({ result, locale }: { result: AnalysisExecution; locale: Locale }) {
+export function ConversationAnswer({ result, locale, expandAssumptions }: { result: AnalysisExecution; locale: Locale; expandAssumptions?: boolean }) {
   const t = conversationCopy[locale]
   const inference = inferenceCopy[locale]
   const count = (value: number) => formatNumber(value, locale)
@@ -126,7 +126,7 @@ export function ConversationAnswer({ result, locale }: { result: AnalysisExecuti
         <p>{t.logP} · <bdi>{formatNumber(evidence.result.logP, locale, 17)}</bdi></p>}
     </>}
     {next && <p className="conversation-next">{next}</p>}
-    {result.assumptions.length > 0 && <details className="conversation-assumptions">
+    {result.assumptions.length > 0 && <details className="conversation-assumptions" open={expandAssumptions}>
       <summary>{t.assumptions}</summary>
       <ul>{result.assumptions.map(assumption => <li key={assumption}>{t.assumption[assumption]}</li>)}</ul>
     </details>}

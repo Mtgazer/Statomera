@@ -1,5 +1,6 @@
-import { ScatterChart } from './charts.tsx'
-import { useLayoutEffect, useRef, useState } from 'react'
+import { ReportAction } from './report-action.tsx'
+import { ScatterChart } from './chart-views.tsx'
+import { Suspense, useLayoutEffect, useRef, useState } from 'react'
 import { AnalysisError } from './analysis.ts'
 import type { AnalysisErrorCode } from './analysis.ts'
 import { columnLabel } from './column-label.ts'
@@ -89,8 +90,8 @@ export const statisticCopy = {
 
 export type RunStatistic = (request: StatisticRequest, signal: AbortSignal) => Promise<StatisticResult>
 
-export function StatisticsPanel({ columns, locale, onRun }: {
-  columns: ColumnProfile[]; locale: Locale; onRun: RunStatistic
+export function StatisticsPanel({ columns, locale, onRun, onReport, reported }: {
+  columns: ColumnProfile[]; locale: Locale; onRun: RunStatistic; onReport: (result: StatisticResult) => void; reported?: StatisticResult
 }) {
   const numeric = columns.filter(column => column.type === 'numeric')
   const t = statisticCopy[locale]
@@ -180,9 +181,21 @@ export function StatisticsPanel({ columns, locale, onRun }: {
       {result && <span className="sr-only">{result.reason ? common.analysisUnavailable : common.analysisReady}</span>}
     </div>
     {result && <div role="group" aria-label={common.analysisEvidence}><StatisticEvidence result={result} locale={locale} /></div>}
-    {result?.scatter && first && second && <ScatterChart data={result.scatter} total={result.valid} locale={locale}
-      labels={[columnLabel(first, locale), columnLabel(second, locale)]} />}
+    {result && <StatisticPlot result={result} columns={columns} locale={locale} />}
+    {result && <ReportAction locale={locale} added={result === reported} onAdd={() => onReport(result)} />}
   </section>
+}
+
+export function StatisticPlot({ result, columns, locale }: { result: StatisticResult; columns: ColumnProfile[]; locale: Locale }) {
+  if (!result.scatter) return null
+  const [firstId, secondId] = result.columns
+  const first = columns.find(column => column.id === firstId)
+  const second = columns.find(column => column.id === secondId)
+  if (!first || !second) return null
+  return <Suspense fallback={<p className="muted">{messages[locale].chartLoading}</p>}>
+    <ScatterChart data={result.scatter} total={result.valid} locale={locale}
+      labels={[columnLabel(first, locale), columnLabel(second, locale)]} />
+  </Suspense>
 }
 
 export function StatisticEvidence({ result, locale }: { result: Omit<StatisticResult, 'scatter'>; locale: Locale }) {

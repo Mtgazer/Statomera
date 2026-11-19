@@ -237,7 +237,7 @@ export function App({ session }: { session: DatasetSession<AnalysisResult> }) {
       {error !== undefined && error !== 'cancelled' &&
         <p role="alert" className="notice error">{t.errors[error]}</p>}
       {active && <Results key={active.revision.ordinal} result={active.profile} locale={locale} filename={active.file.name} onOverride={updateOverride} onStatistic={runStatistic} onInference={runInference}
-        conversation={<ConversationPanel session={session} revision={active.revision} locale={locale} />} />}
+        conversation={(onReport, reported) => <ConversationPanel session={session} revision={active.revision} locale={locale} onReport={onReport} reported={reported} />} />}
     </main>
   </>
 }

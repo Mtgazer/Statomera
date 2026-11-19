@@ -285,3 +285,28 @@ td[data-selected], tr[data-selected] > th { background: var(--selection); }
   padding: .4rem .65rem; border-inline-start: .15rem solid var(--control-border); background: var(--surface);
 }
 .conversation-assumptions { margin-block-start: .75rem; }
+
+.report-panel { border-block-start: 3px solid var(--gold); }
+.report-panel > details > summary { padding-block: .65rem; }
+.report-body { display: grid; gap: .7rem; }
+.report-body > h3, .report-body > .metrics { margin-block: 0; }
+.report-controls { display: flex; flex-wrap: wrap; align-items: end; gap: .55rem 1rem; }
+.report-controls label { min-inline-size: 0; display: grid; gap: .3rem; flex: 0 1 22rem; }
+.report-finding {
+  min-inline-size: 0; background: var(--background); border: 1px solid var(--border);
+  border-radius: .5rem; padding: clamp(.65rem, 2vw, 1.15rem); overflow-wrap: anywhere;
+}
+.report-finding > :where(p, dl, table) + p { margin-block-start: .5rem; }
+.report-finding-title { font-size: 1.1rem; font-weight: 680; }
+.report-add { margin-block-start: .65rem; }
+.report-inputs { display: flex; flex-wrap: wrap; gap: .5rem 1.4rem; margin-block: .6rem; }
+.report-inputs > div { min-inline-size: 0; }
+.report-inputs dt { color: var(--muted); font-size: .875rem; }
+.report-inputs dd { margin: 0; }
+.report-finding .inference-counts { table-layout: fixed; }
+.report-finding .chart-plot { border: 1px solid var(--border); }
+.report-finding .distribution-charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); gap: .5rem 1.25rem; }
+@media (max-width: 28rem) {
+  .report-finding :where(th, td) { padding-inline: .32rem; }
+}
+.report-add[aria-disabled='true'] { color: var(--muted); cursor: default; }

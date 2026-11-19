@@ -1,0 +1,253 @@
+import { expect, test } from '@playwright/test'
+import type { Page } from '@playwright/test'
+import { fileURLToPath } from 'node:url'
+
+async function upload(page: Page, text: string, name = 'report.csv') {
+  await page.locator('input[type=file]').setInputFiles({ name, mimeType: 'text/csv', buffer: Buffer.from(text) })
+}
+
+async function openReport(page: Page) {
+  const link = page.getByRole('link', { name: 'Analytical report' })
+  await link.press('Enter')
+  const report = page.getByRole('region', { name: 'Analytical report' })
+  await expect(report).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(report.getByText('Report contents', { exact: true })).toBeFocused()
+  await page.keyboard.press('Enter')
+  return report
+}
+
+test('Phase 7B reports canonical column and paired evidence in English and Arabic', async ({ page, context }) => {
+  const chartRequests: string[] = []
+  context.on('request', request => {
+    if (/\/assets\/charts-/.test(request.url())) chartRequests.push(request.url())
+  })
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await page.goto('/')
+  await page.getByText('Import options', { exact: true }).click()
+  await page.getByLabel('Treat NA, N/A, NULL and NaN as missing').check()
+  await upload(page, 'salary,القيمة\n1,10\n2,20\n3,30\n4,40\n5,50\n6,60\n7,70\n100,80\nNA,90\nbad,100\n,110')
+  const report = await openReport(page)
+  await expect(report).toContainText('report.csv')
+  await expect(report).toContainText('Records11')
+  await expect(report).toContainText('Columns2')
+  await expect(report).toContainText('Blank cells1')
+  await expect(report).toContainText('Missing markers1')
+  await expect(report).toContainText('Invalid values1')
+  await expect(report).toContainText('No findings selected.')
+  await page.getByLabel('Search preview').fill('absent query')
+  await expect(report).toContainText('Preview search, filtering and sorting only change the preview.')
+  expect(chartRequests).toHaveLength(0)
+
+  await report.getByLabel('Column profile').selectOption({ label: 'salary' })
+  const column = report.getByRole('group', { name: 'salary' })
+  await expect(column.getByRole('img', { name: 'Histogram' })).toHaveAccessibleDescription(/Count per bin/)
+  const box = column.getByRole('img', { name: 'Box plot' })
+  await expect(box).toHaveAccessibleDescription(/outermost observations inside the IQR fences/)
+  await expect(box.locator('.chart-outlier')).toHaveCount(1)
+  await expect(column.getByText('First quartile', { exact: true }).locator('..')).toContainText('2.75')
+  await expect(column.getByText('Third quartile', { exact: true }).locator('..')).toContainText('6.25')
+  const bins = column.getByRole('table', { name: /Distribution of valid values/ })
+  await expect(bins.locator('tbody tr').first().locator('td')).toHaveText('7')
+  await expect(bins.locator('tbody tr').last().locator('td')).toHaveText('1')
+
+  const stats = page.getByRole('region', { name: 'Descriptive statistics' })
+  await stats.getByLabel('Operation').selectOption('pearson')
+  await stats.getByRole('button', { name: 'Calculate' }).press('Enter')
+  await stats.getByRole('button', { name: 'Add to report' }).press('Enter')
+  await expect(stats.getByRole('button', { name: 'In report' })).toBeFocused()
+  const paired = report.getByRole('group', { name: 'Pearson correlation' })
+  expect(Number(await paired.getByTestId('statistic-value').getAttribute('data-value'))).toBeCloseTo(0.6243797383564963, 14)
+  await expect(paired).toContainText('Complete pairs8')
+  await expect(paired).toContainText('Excluded records3')
+  await expect(paired).toContainText('Missing only2')
+  await expect(paired).toContainText('With invalid values1')
+  await expect(paired).toContainText('cannot establish causation')
+  const scatter = paired.getByRole('img', { name: 'Scatter plot' })
+  await expect(scatter).toHaveAccessibleDescription(/Horizontal axis.*salary.*Vertical axis.*القيمة/)
+  await expect(scatter.locator('.chart-point')).toHaveCount(8)
+  await paired.getByText('Scatter data', { exact: true }).press('Enter')
+  await expect(paired.getByRole('table', { name: 'Complete pairs' }).locator('tbody tr').last()).toHaveText('10080')
+  expect(chartRequests).toHaveLength(1)
+
+  for (const width of [1280, 768, 320]) {
+    await page.setViewportSize({ width, height: 900 })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width)
+  }
+  await page.getByLabel('Theme').selectOption('light')
+  await page.getByLabel('Language').selectOption('ar')
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+  const arabic = page.getByRole('region', { name: 'التقرير التحليلي' })
+  await expect(arabic.getByRole('img', { name: 'المدرج التكراري' })).toBeVisible()
+  await expect(arabic.getByRole('img', { name: 'مخطط التشتت' })).toBeVisible()
+  await expect(arabic).toContainText('السجلات١١')
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
+})
+
+test('Phase 7B reports confidence intervals, assumptions and group filtering', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+  await upload(page, 'salary\n1\n2\n3\n4\n5')
+  const inference = page.getByRole('region', { name: 'Statistical inference' })
+  await inference.getByRole('button', { name: 'Run inference' }).click()
+  await inference.getByRole('button', { name: 'Add to report' }).click()
+  const report = await openReport(page)
+  const interval = report.getByRole('group', { name: 'Mean confidence interval' })
+  await expect(interval).toContainText('Confidence level95%')
+  await expect(interval).toContainText('Assumptions')
+  await expect(interval.getByTestId('inference-estimate')).toHaveText('3')
+  await expect(interval.getByRole('img', { name: 'Confidence interval plot 95%' })).toHaveAccessibleDescription(/under the stated assumptions/)
+  const endpoints = interval.getByTestId('inference-interval').locator('bdi')
+  await expect(endpoints).toHaveCount(2)
+  expect(Number(await endpoints.first().textContent())).toBeCloseTo(1.036756838522439, 9)
+  expect(Number(await endpoints.last().textContent())).toBeCloseTo(4.9632431614775605, 9)
+  await report.getByRole('button', { name: 'Clear report findings' }).press('Enter')
+  await expect(report.getByText('Report contents', { exact: true })).toBeFocused()
+  await expect(report).toContainText('No findings selected.')
+  await expect(inference.getByTestId('inference-estimate')).toHaveText('3')
+
+  await upload(page, 'salary,group\n10,A\n14,A\n,A\nbad,A\n4,B\n6,B\n100,C')
+  await inference.getByLabel('Inference method').selectOption('welch')
+  await inference.getByLabel('Group A').selectOption('A')
+  await inference.getByLabel('Group B').selectOption('B')
+  await inference.getByRole('button', { name: 'Run inference' }).click()
+  await inference.getByRole('button', { name: 'Add to report' }).click()
+  await openReport(page)
+  const welch = report.getByRole('group', { name: /Welch/ })
+  await expect(welch.getByTestId('inference-estimate')).toHaveText('7')
+  await expect(welch.getByRole('table', { name: 'Observation counts' }).locator('tbody tr')).toHaveText(['A211', 'B200'])
+  await expect(welch).toContainText(/Total excluded\s+3.*Outside selected groups\s+1/)
+  await expect(welch).toContainText('Grouping columngroup')
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
+})
+
+test('Phase 7B handles unsupported, unavailable, empty and replaced results', async ({ page }) => {
+  await page.goto('/')
+  await upload(page, 'salary,constant\n10,1\n20,1')
+  const report = await openReport(page)
+  const conversation = page.locator('#conversation')
+  const question = conversation.getByRole('textbox')
+  const reply = conversation.locator('.conversation-reply').last()
+  await question.fill('Forecast salary')
+  await question.press('Enter')
+  await expect(reply.getByRole('heading', { name: 'Question unsupported' })).toBeVisible()
+  await expect(reply.getByRole('button', { name: 'Add to report' })).toHaveCount(0)
+  await expect(report).toContainText('No findings selected.')
+
+  await question.fill('correlation between salary and constant')
+  await question.press('Enter')
+  await expect(reply.getByRole('heading', { name: 'Result unavailable' })).toBeVisible()
+  await reply.getByRole('button', { name: 'Add to report' }).click()
+  const finding = report.getByRole('group', { name: 'Question evidence' })
+  await expect(finding.getByTestId('statistic-value')).toHaveText('Undefined')
+  await expect(finding.getByTestId('statistic-value')).not.toHaveAttribute('data-value')
+  await expect(finding).toContainText('At least one column is constant')
+  await expect(finding.getByRole('img')).toHaveCount(0)
+  await conversation.getByRole('button', { name: 'Clear conversation' }).click()
+  await expect(finding).toHaveCount(0)
+  await question.fill('How many rows?')
+  await question.press('Enter')
+  await reply.getByRole('button', { name: 'Add to report' }).click()
+  await expect(finding).toContainText('Count2')
+
+  await upload(page, 'salary,constant\n')
+  await openReport(page)
+  await expect(report).toContainText('Records0')
+  await expect(report).toContainText('The file contains column headers only.')
+  await expect(report).toContainText('No findings selected.')
+  await expect(finding).toHaveCount(0)
+
+  await page.locator('input[type=file]').setInputFiles(fileURLToPath(new URL('../fixtures/worksheets.xlsx', import.meta.url)))
+  await expect(page.getByTestId('rows')).toHaveText('4')
+  await openReport(page)
+  await expect(report.getByText('مبيعات', { exact: true })).toBeVisible()
+  await expect(report.getByText('XLSX', { exact: true })).toBeVisible()
+  await expect(report).toContainText('No findings selected.')
+  await page.getByRole('button', { name: 'Clear dataset' }).click()
+  await expect(report).toHaveCount(0)
+})
+
+test('Phase 7B reuses near-limit density evidence without starting another worker', async ({ page, context, browserName }) => {
+  const requests: { url: string; method: string; body: string | null }[] = []
+  context.on('request', req => requests.push({ url: req.url(), method: req.method(), body: req.postData() }))
+  await page.addInitScript(() => {
+    const WorkerBase = window.Worker
+    window.Worker = class extends WorkerBase {
+      constructor(url: string | URL, options?: WorkerOptions) {
+        super(url, options)
+        performance.mark('report:worker-start')
+      }
+      terminate() {
+        performance.mark('report:worker-end')
+        super.terminate()
+      }
+    }
+  })
+  await page.setViewportSize({ width: 360, height: 800 })
+  await page.goto('/')
+  const csv = 'left,right,label\n' + '1,2,ReportPrivateSampleXXXXXXXXXXXXXXXXXXXX\n3,6,ReportPrivateSampleXXXXXXXXXXXXXXXXXXXX\n'.repeat(50_000)
+  await upload(page, csv)
+  await expect(page.getByTestId('rows')).toHaveText('100,000')
+  const panel = page.getByRole('region', { name: 'Descriptive statistics' })
+  await panel.getByLabel('Operation').selectOption('pearson')
+  await panel.getByRole('button', { name: 'Calculate' }).click()
+  await expect(panel.getByRole('img', { name: 'Scatter plot' })).toBeVisible()
+  const countWorkers = () => page.evaluate(() => ['report:worker-start', 'report:worker-end']
+    .map(name => performance.getEntriesByName(name).length))
+  const before = await countWorkers()
+  expect(before[0]).toBeGreaterThan(0)
+  expect(before[0]).toBe(before[1])
+  await panel.getByRole('button', { name: 'Add to report' }).click()
+  const reportStart = performance.now()
+  const report = await openReport(page)
+  const scatter = report.getByRole('img', { name: 'Scatter plot' })
+  await expect(scatter.locator('.chart-density')).toHaveCount(2)
+  const visibleMs = Math.round(performance.now() - reportStart)
+  await expect(report).toContainText('Complete pairs100,000')
+  await report.getByText('Scatter data', { exact: true }).press('Enter')
+  await expect(report.getByRole('table', { name: 'Populated cells' }).locator('td:last-child')).toHaveText(['50,000', '50,000'])
+  expect(await countWorkers()).toEqual(before)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(360)
+  expect(await page.evaluate(async () => [localStorage.length, sessionStorage.length,
+    (await indexedDB.databases()).length, (await caches.keys()).length])).toEqual([0, 0, 0, 0])
+  expect(await context.cookies()).toEqual([])
+  const origin = new URL(page.url()).origin
+  expect(requests.filter(req => /^https?:/.test(req.url)).every(({ url, method, body }) => {
+    const address = new URL(url)
+    return address.origin === origin && /^\/(?:assets\/[^/]+)?$/.test(address.pathname) && !address.search &&
+      method === 'GET' && body === null && !url.includes('ReportPrivateSample')
+  })).toBe(true)
+  console.log(JSON.stringify({ mode: process.env.ASKORA_TEST_MODE, browserName, records: 100000,
+    bytes: Buffer.byteLength(csv), reportVisibleMs: visibleMs, additionalWorkers: 0 }))
+})
+
+test('Phase 7B keeps report values readable when the optional chart asset fails', async ({ page, context }) => {
+  await context.route('**/assets/charts-*.js', route => route.abort())
+  await page.goto('/')
+  await upload(page, 'salary\n1\n2\n3\n4\n5')
+  const report = await openReport(page)
+  await report.getByLabel('Column profile').selectOption({ label: 'salary' })
+  await expect(report.getByText('The chart could not load. You can still read the numerical evidence.')).toBeVisible()
+  await expect(report.getByRole('table', { name: /Distribution of valid values/ })).toBeVisible()
+  await expect(report.getByText('Median', { exact: true }).locator('..')).toHaveText('Median3')
+})
+
+test('Phase 7B distinguishes inferred type and schema override in a fresh report', async ({ page }) => {
+  await page.goto('/')
+  await upload(page, 'salary\n1\n2\n3')
+  const report = await openReport(page)
+  await report.getByLabel('Column profile').selectOption({ label: 'salary' })
+  await expect(report.getByRole('img', { name: 'Histogram' })).toBeVisible()
+
+  const override = page.getByLabel('Schema override · salary')
+  await override.selectOption('text')
+  await expect(override).toHaveValue('text')
+  await openReport(page)
+  await expect(report).toContainText('No findings selected.')
+  await report.getByLabel('Column profile').selectOption({ label: 'salary' })
+  const column = report.getByRole('group', { name: 'salary' })
+  await expect(column).toContainText('Inferred type · Number')
+  await expect(column).toContainText('Schema override · Text')
+  await expect(column.getByRole('img')).toHaveCount(0)
+})

@@ -1,7 +1,9 @@
-import { DistributionCharts } from './charts.tsx'
+import { Suspense } from 'react'
+import { DistributionCharts } from './chart-views.tsx'
+import { distinctLimit } from './dataset.ts'
 import type { ColumnProfile, DatasetProfile } from './dataset.ts'
 import { columnLabel } from './column-label.ts'
-import { formatNumber } from './locale.ts'
+import { formatNumber, messages } from './locale.ts'
 import type { Locale } from './locale.ts'
 import type { QualityFinding } from './quality.ts'
 
@@ -128,6 +130,32 @@ export function QualityReports({ result, locale }: { result: DatasetProfile; loc
   </div>
 }
 
+export function ColumnSummary({ column, locale }: { column: ColumnProfile; locale: Locale }) {
+  const t = messages[locale]
+  const number = (value: number) => formatNumber(value, locale)
+  const { numeric, frequency, warnings } = column
+  return <>
+    <p className="distinct-line"><span>{t.distinctValues}</span> <strong>{column.distinct === null
+      ? t.distinctCap(number(distinctLimit)) : number(column.distinct)}</strong></p>
+    {warnings.map(warning => <p className="muted" key={warning}>{t.warnings[warning]}</p>)}
+    {numeric && <dl className="profile-statistics">
+      {([['count', numeric.count], ['meanValue', numeric.mean], ['min', numeric.min],
+        ['max', numeric.max], ['median', numeric.median]] as const).map(([label, value]) =>
+        <div key={label}><dt>{t[label]}</dt><dd>{number(value)}</dd></div>,
+      )}
+    </dl>}
+    {frequency && frequency.entries.length > 0 && <>
+      <table><caption>{t.frequency}</caption>
+        <thead><tr><th scope="col">{t.value}</th><th scope="col">{t.count}</th></tr></thead>
+        <tbody>{frequency.entries.map(({ value, count }) =>
+          <tr key={value}><th scope="row"><bdi>{value}</bdi></th><td>{number(count)}</td></tr>,
+        )}</tbody>
+      </table>
+      {frequency.omitted > 0 && <p className="muted">{t.otherCategories} {number(frequency.omitted)}</p>}
+    </>}
+  </>
+}
+
 export function ColumnQuality({ column, rows, locale }: { column: ColumnProfile; rows: number; locale: Locale }) {
   const t = qualityMessages[locale]
   const number = (value: number) => formatNumber(value, locale)
@@ -145,7 +173,9 @@ export function ColumnQuality({ column, rows, locale }: { column: ColumnProfile;
       <li key={finding}>{t.findings[finding]}</li>,
     )}</ul>}
     {distribution && column.numeric && <>
-      <DistributionCharts numeric={column.numeric} quality={distribution} locale={locale} />
+      <Suspense fallback={<p className="muted">{messages[locale].chartLoading}</p>}>
+        <DistributionCharts numeric={column.numeric} quality={distribution} locale={locale} />
+      </Suspense>
       <h3>{t.outlierMethod}</h3>
       {assessment?.status === 'assessed'
         ? <dl className="profile-statistics">

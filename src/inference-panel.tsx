@@ -1,5 +1,6 @@
-import { IntervalChart } from './charts.tsx'
-import { useLayoutEffect, useRef, useState } from 'react'
+import { ReportAction } from './report-action.tsx'
+import { IntervalChart } from './chart-views.tsx'
+import { Suspense, useId, useLayoutEffect, useRef, useState } from 'react'
 import { AnalysisError } from './analysis.ts'
 import type { AnalysisErrorCode } from './analysis.ts'
 import { columnLabel } from './column-label.ts'
@@ -113,6 +114,7 @@ export function InferenceOutput({ result, locale }: { result: InferenceResult; l
   const t = inferenceCopy[locale]
   const number = (value: number | null) => value === null ? t.undefined : formatNumber(value, locale, 17)
   const { request } = result
+  const description = useId()
   const percent = new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en', { style: 'percent' }).format(request.level / 100)
   return <>
     <p className="statistic-answer">{t.estimate} <strong data-testid="inference-estimate"><bdi>{number(result.estimate)}</bdi></strong></p>
@@ -122,8 +124,10 @@ export function InferenceOutput({ result, locale }: { result: InferenceResult; l
       <p className="chart-range chart-interval-values" dir="ltr" data-testid="inference-interval">
         <bdi>{number(result.interval.lower)}</bdi><bdi>{number(result.interval.upper)}</bdi>
       </p>
-      <IntervalChart result={result} level={percent} locale={locale} />
-      <p className="muted">{t.intervalHelp}</p>
+      <Suspense fallback={<p className="muted">{messages[locale].chartLoading}</p>}>
+        <IntervalChart result={result} level={percent} locale={locale} description={description} />
+      </Suspense>
+      <p id={description} className="muted">{t.intervalHelp}</p>
     </>}
     {request.method === 'meanInterval' && result.degrees !== null && <p>{t.df} <bdi>{number(result.degrees)}</bdi></p>}
     {request.method !== 'meanInterval' && result.degrees !== null && <>
@@ -155,7 +159,7 @@ export function InferenceOutput({ result, locale }: { result: InferenceResult; l
   </>
 }
 
-export function InferencePanel({ columns, locale, onRun }: { columns: ColumnProfile[]; locale: Locale; onRun: RunInference }) {
+export function InferencePanel({ columns, locale, onRun, onReport, reported }: { columns: ColumnProfile[]; locale: Locale; onRun: RunInference; onReport: (result: InferenceResult) => void; reported?: InferenceResult }) {
   const t = inferenceCopy[locale]
   const common = messages[locale]
   const [method, setMethod] = useState<InferenceMethod>('meanInterval')
@@ -281,7 +285,10 @@ export function InferencePanel({ columns, locale, onRun }: { columns: ColumnProf
         </p>}
         {result && <span className="sr-only">{result.reason ? common.analysisUnavailable : common.analysisReady}</span>}
       </div>
-      {result && <div role="group" aria-label={common.analysisEvidence}><InferenceOutput result={result} locale={locale} /></div>}
+      {result && <>
+        <div role="group" aria-label={common.analysisEvidence}><InferenceOutput result={result} locale={locale} /></div>
+        <ReportAction locale={locale} added={result === reported} onAdd={() => onReport(result)} />
+      </>}
     </>}
   </section>
 }
