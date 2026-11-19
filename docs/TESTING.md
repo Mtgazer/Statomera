@@ -17,3 +17,11 @@ Run fast checks per change. Run browser smoke tests on branch review and real-de
 ## Phase 2A fixtures
 
 Run the existing unit suite and the browser suite against portable, MVP and EH builds. The CSV reference fixtures cover generic schemas, duplicate headers, empty and malformed files, opt-in markers, unsafe integers, Arabic and quoted values, booleans, ambiguous dates and exact repeated rows. Verify count partitions and hand-derived numerical summaries. The browser suite includes a deterministic multilingual 80,000-row fixture in addition to the previous scale runs. See [Phase 2A verification](PHASE_2A_REPORT.md#verification-and-performance) for commands, measurements and device coverage.
+
+## Phase 8 release checks
+
+- Verify the exact release archive and each file hash. Repeat the release disclosure, notices, import and local privacy checks after recovery. Check that the app and worker receive restrictive CSP and correct MIME types. Compare hosted responses only after separate upload approval.
+- Desktop automation covers Chromium and Firefox in the independent rebrand baseline. Local Playwright WebKit is supplemental. Record real-device and screen-reader results separately. No physical mobile, Apple Safari, or native screen-reader audio validation is recorded for this candidate.
+- On a representative Android device and a lower-memory Android device, use touch to import a known synthetic file, run an analysis, open its report, cancel and recover, and replace the file. Check Arabic and English without clipped controls or stale evidence. Repeat three near-limit imports and record device, browser, size, elapsed time, and any visible stalls or recoverable failures.
+- On Safari and with a native screen reader, test keyboard access, focus visibility, RTL navigation, spoken import and analysis status, cancellation and retry, and access to numerical chart alternatives. Record the actual browser, device, assistive technology, and language tested.
+- When a feedback recipient and retention period have been approved, verify the bilingual disclosure and inspect the editable draft without submitting it. Confirm that only the approved recipient and an optional fixed subject are prefilled.

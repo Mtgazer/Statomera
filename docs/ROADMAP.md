@@ -20,7 +20,7 @@ Each row is a review boundary. Start the next phase after explicit approval. Use
 | 7 | Charts, reports, complete responsive UI and optional PWA install/cache | Result contract and approved brand assets | Chart/report values match canonical results. Real-device touch, accessibility, caching and update tests pass. | `feature/reporting-pwa`. Installation and offline availability vary by platform. |
 | 7A | Core Workflow and Accessibility Readiness | Verified Phase 6C closure and explicit approval | Bilingual import-to-evidence workflow, dataset lifecycle, recovery, keyboard focus, and preview boundaries verified. Independent Antigravity QA passed. | **Complete.** See the [implementation report](PHASE_7A_IMPLEMENTATION.md) and [closure](PHASE_7A_CLOSURE.md) for coverage and remaining limitations. |
 | 7B | Reporting and Responsive Experience | Phase 7A closure and existing analytical evidence contracts | Independent Antigravity QA passed all 122 Chromium and Firefox executions. Reporting, all four SVG charts, statistical integrity, privacy, and responsive layouts from 320px to 1280px were verified. | **Complete.** See the [implementation handoff](PHASE_7B_IMPLEMENTATION.md) and [closure](PHASE_7B_CLOSURE.md) for coverage and remaining limits. |
-| 8 | Hardening, pilot feedback, public static rollout and rollback | Complete release checks, host approval and naming review | Privacy, correctness and device gates pass. Anonymous access, consent flow and rollback verified. Approve public exposure before launch. | `release/public-beta`. Publish host and analytical limitations. |
+| 8 | Hardening, pilot feedback, public static rollout and rollback | Complete release checks, host approval and naming review | Privacy, correctness and device gates pass. Anonymous access, consent flow and rollback verified. Approve public exposure before launch. | **Release preparation implemented locally.** Independent QA, feedback recipient and retention, and hosted verification remain pending. Public exposure requires separate approval. [Phase 8 handoff](PHASE_8_IMPLEMENTATION.md) |
 | Future | Android distribution, advanced cloud AI, accounts, shared workspaces, subscriptions and advanced modeling | Usage evidence, funding as needed and separate approval | Dedicated feasibility, privacy, cost and release gates if approved | Separate branches and milestones. |
 
 <a id="phase-7a-recommendation"></a>
@@ -35,8 +35,8 @@ Independent QA had 42 of 43 browser tests pass in each of Chromium and Firefox b
 
 Reporting and Responsive Experience was implemented at `820989d` and passed independent Antigravity QA with zero application defects found. Linux WebKit was blocked by missing OS libraries in independent QA. Physical mobile and native screen-reader testing remain open. PDF and Markdown export and PWA work were outside Phase 7B. [Phase 7B closure](PHASE_7B_CLOSURE.md)
 
-Optional PWA work and Phase 8 public beta work remain pending explicit approval.
+Optional PWA work and public beta exposure remain pending explicit approval.
 
 ## STATOMERA identity
 
-**Rebranding complete.** STATOMERA passed independent Antigravity QA at implementation commit `97f094a`. Phase 8 remains pending explicit founder approval. Availability and trademark verification remain open. [Brand identity](BRAND_IDENTITY.md) · [Rebranding closure](REBRANDING_CLOSURE.md)
+**Rebranding complete.** STATOMERA passed independent Antigravity QA at implementation commit `97f094a`. Phase 8 release preparation was approved separately. Hosted preview and public exposure still require explicit founder approval. Availability and trademark verification remain open. [Brand identity](BRAND_IDENTITY.md) · [Rebranding closure](REBRANDING_CLOSURE.md)

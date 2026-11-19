@@ -230,7 +230,8 @@ export function App({ session }: { session: DatasetSession<AnalysisResult> }) {
               {workbook.names.map((name, index) => <option key={index} value={index}>{name}</option>)}
             </select>
           </label>}
-          <p className="muted">{t.privacy}</p>
+          <p className="muted">{t.privacy} {t.hostingPrivacy}</p>
+          <a className="muted" href={`${import.meta.env.BASE_URL}third-party-notices.txt`}>{t.thirdPartyNotices}</a>
         </div>
       </section>
       <div role="status" aria-atomic="true">
