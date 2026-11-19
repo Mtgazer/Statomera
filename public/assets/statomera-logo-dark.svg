@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" role="img" aria-labelledby="title description">
+  <title id="title">STATOMERA Dark Logo</title>
+  <desc id="description">The official STATOMERA dark logo with Champagne Gold distribution curve and Electric Graphite palette.</desc>
+  <rect width="600" height="360" fill="#10141C"/>
+  <defs>
+    <linearGradient id="goldRibbonDark" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#C29D53"/>
+      <stop offset="45%" stop-color="#D6B36A"/>
+      <stop offset="100%" stop-color="#ECD49F"/>
+    </linearGradient>
+    <linearGradient id="crestHighlightDark" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFF5DC"/>
+      <stop offset="100%" stop-color="#D6B36A" stop-opacity="0.2"/>
+    </linearGradient>
+    <linearGradient id="centerPillarDark" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#B89345"/>
+      <stop offset="50%" stop-color="#E5C78B"/>
+      <stop offset="100%" stop-color="#FFF7E6"/>
+    </linearGradient>
+    <linearGradient id="silverPillarDark" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#7B8491"/>
+      <stop offset="60%" stop-color="#B6BDC9"/>
+      <stop offset="100%" stop-color="#E2E6ED"/>
+    </linearGradient>
+    <linearGradient id="accentRuleDark" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#D6B36A" stop-opacity="0.1"/>
+      <stop offset="50%" stop-color="#D6B36A"/>
+      <stop offset="100%" stop-color="#D6B36A" stop-opacity="0.1"/>
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(150, 24)">
+    <!-- Main Distribution Curve Ribbon -->
+    <path d="M 24 116
+             C 65 116, 95 109, 118 78
+             C 133 57, 142 22, 150 22
+             C 158 22, 167 57, 182 78
+             C 205 109, 235 116, 276 116
+             C 242 115, 218 105, 196 80
+             C 180 61, 168 35, 150 35
+             C 132 35, 120 61, 104 80
+             C 82 105, 58 115, 24 116 Z"
+          fill="url(#goldRibbonDark)"/>
+    <!-- Upper Crest Ribbon Highlight -->
+    <path d="M 124 70
+             C 136 53, 143 22, 150 22
+             C 157 22, 164 53, 176 70
+             C 169 57, 160 30, 150 30
+             C 140 30, 131 57, 124 70 Z"
+          fill="url(#crestHighlightDark)"/>
+    <!-- Center Pillar -->
+    <path d="M 150 48
+             C 152.8 54, 152.8 106, 150 112
+             C 147.2 106, 147.2 54, 150 48 Z"
+          fill="url(#centerPillarDark)"/>
+    <!-- Left Pillar -->
+    <path d="M 124 68
+             C 126.4 72, 126.4 107, 124 112
+             C 121.6 107, 121.6 72, 124 68 Z"
+          fill="url(#silverPillarDark)"/>
+    <!-- Right Pillar -->
+    <path d="M 176 68
+             C 178.4 72, 178.4 107, 176 112
+             C 173.6 107, 173.6 72, 176 68 Z"
+          fill="url(#silverPillarDark)"/>
+  </g>
+
+  <!-- Wordmark STATOMERA -->
+  <text x="300" y="235"
+        fill="#F3F0E8"
+        font-family="Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+        font-size="44"
+        font-weight="700"
+        letter-spacing="0.22em"
+        text-anchor="middle">STATOMERA</text>
+
+  <!-- Left Tapered Accent Rule -->
+  <path d="M 110 274 Q 145 272.5 175 274 Q 145 275.5 110 274 Z" fill="url(#accentRuleDark)"/>
+  <!-- Secondary Descriptor -->
+  <text x="300" y="278"
+        fill="#AEB4BF"
+        font-family="Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+        font-size="14.5"
+        font-weight="450"
+        letter-spacing="0.16em"
+        text-anchor="middle">Statistical Data Intelligence</text>
+  <!-- Right Tapered Accent Rule -->
+  <path d="M 425 274 Q 455 272.5 490 274 Q 455 275.5 425 274 Z" fill="url(#accentRuleDark)"/>
+</svg>

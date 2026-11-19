@@ -1,37 +1,94 @@
 # STATOMERA brand identity
 
-**STATOMERA** is the current product identity. The rebrand passed independent Antigravity QA. [Rebranding closure](REBRANDING_CLOSURE.md)
+**STATOMERA** is the canonical product identity.
 
-The descriptor is **Statistical Data Intelligence**. The tagline **Understand Data. Trust the Evidence.** is proposed and stays out of the shipped interface. The identity emphasizes quantitative research, verifiable evidence, and private, browser-local data analysis.
+The descriptor is **Statistical Data Intelligence**. The identity communicates scientific credibility, statistical expertise, mathematical precision, premium quality, and private, browser-local data analysis.
+
+> [!IMPORTANT]
+> **Branding Direction History**: The preliminary Navy, Teal, and Silver palette explored during initial rebranding has been explicitly **rejected** by the founder. The founder-approved visual identity is **Electric Graphite + Champagne Gold**, featuring a minimalist statistical distribution curve with three internal statistical pillars, supported by Silver Grey and Warm White / Soft Ivory.
+
+---
 
 ## Logo assets
 
-| Variant | Usage |
-| --- | --- |
-| [Primary logo](../public/assets/statomera-primary.svg) | Hand-lettered STATOMERA wordmark and symbol on a light background. The wordmark uses paths, so the asset requires no fonts. |
-| [Compact symbol](../public/assets/statomera-mark.svg) | Workspace header icon. Pair it with the live STATOMERA wordmark and a localized descriptor. |
-| [Favicon](../public/assets/statomera-favicon.svg) | Small square tile with heavier strokes for browser tabs. |
+| Variant | Path | Usage |
+|---|---|---|
+| **Primary horizontal logo** | `public/assets/statomera-primary.svg` | Horizontal lockup with symbol tile, uppercase STATOMERA wordmark, and descriptor. For documentation, reports, and headers. |
+| **Compact symbol mark** | `public/assets/statomera-mark.svg` | Standalone symbol on an Electric Graphite tile (`#151922` with border `#39414E`). Used directly in the application header lockup. |
+| **Favicon** | `public/assets/statomera-favicon.svg` | Full-bleed Deep Graphite tile (`#10141C`) with reinforced stroke weights for sharp 16×16 and 32×32 browser tab legibility. |
+| **Dark showcase logo** | `public/assets/statomera-logo-dark.svg` | Authoritative stacked logo on Deep Graphite (`#10141C`) with Champagne Gold bell curve, crest highlight, and tapered gold rules. |
+| **Light showcase logo** | `public/assets/statomera-logo-light.svg` | Authoritative stacked logo on Soft Ivory (`#F7F5F0`) with Dark Gold details, Deep Graphite text, and slate rules. |
 
-The teal distribution and silver measurement axis sit on a deep navy tile. Keep the original proportions and a clear margin around the tile. Leave the icon's alternative text empty when live text already names the product. Each SVG supplies its own title and description for standalone use. Use the standalone primary logo on light backgrounds. On dark surfaces, use the compact symbol with a light text wordmark as in the workspace.
+### Symbol Geometry
+The symbol contains:
+- A symmetrical, elegant normal distribution curve (Gaussian bell curve) rendered as a tapering Champagne Gold ribbon.
+- A delicate upper crest highlight curve in Soft Gold reflecting architectural lighting.
+- Three vertical statistical pillars resting on the baseline under the arch:
+  - **Center pillar**: Tapered needle profile in Champagne Gold (`#D6B36A` / `#E4C98F`), representing the central tendency (mean / median).
+  - **Left and right pillars**: Symmetrical vertical pillars in Silver Grey (`#AEB4BF`), positioned at the ±1 standard deviation inflection lines.
 
-## Palette
+---
 
-| Role | Dark | Light |
-| --- | --- | --- |
-| Background | `#0D1826` | `#EEF3F6` |
-| Surface | `#152336` | `#FFFFFF` |
-| Raised surface | `#203149` | `#E1EBEF` |
-| Primary text | `#F2F7FA` | `#162737` |
-| Secondary text | `#A9BAC9` | `#435768` |
-| Link, chart, and focus accent | `#55C5B2` | `#076759` |
-| Primary button fill | `#55C5B2` | `#55C5B2` |
+## Palette specification
 
-Keep the navy default theme and use teal selectively. Silver is secondary. Use text, shape, and exact numerical alternatives alongside color in charts and status indicators.
+### Dark Theme (Default)
+Electric Graphite dominant canvas paired with Champagne Gold accents:
 
-## Typography and language
+| Token | CSS Variable | Hex | Role | Contrast Ratio |
+|---|---|---|---|---|
+| Deep Graphite | `--background` | `#10141C` | Page canvas background | Baseline |
+| Electric Graphite | `--surface` | `#151922` | Cards, panels, topbar header | — |
+| Surface Graphite | `--raised` | `#202733` | Table headers, metrics cards, button hover | — |
+| Subtle Border | `--border` | `#39414E` | Structural panel and table borders | — |
+| Control Border | `--control-border` | `#4D5869` | Selects, inputs, unpressed buttons | — |
+| Champagne Gold | `--brand-accent` | `#D6B36A` | Primary accent, primary button fill, panel top accents | **9.3:1** vs `#10141C` |
+| Soft Gold | `--focus` | `#D6B36A` / `#E4C98F` | Active focus indicator, button hover | **10.5:1** vs `#10141C` |
+| Silver Grey | `--muted` | `#AEB4BF` | Secondary text, captions, metadata | **8.7:1** vs `#10141C` (AAA) |
+| Warm White | `--ink` | `#F3F0E8` | Primary text, headings, body copy | **16.5:1** vs `#10141C` (AAA) |
+| Button Ink | `--button-ink` | `#10141C` | High-contrast text on gold buttons | **9.3:1** vs `#D6B36A` (AAA) |
+| Warm Gold Tint | `--selection` | `#2E2A1E` | Selected cells, conversation question bubble | — |
+| Warm Coral | `--error` | `#FF7F6E` | Accessible error notices and status badges | **6.8:1** vs `#10141C` (AA) |
 
-The workspace retains the Inter and IBM Plex Sans Arabic system font stacks, without shipping font assets or making external font requests. Use STATOMERA in uppercase Latin characters in both locales. Preserve its left-to-right direction within Arabic layouts. Translate the descriptor as **ذكاء البيانات الإحصائية**. Let controls and workspace content follow the selected document language and direction.
+### Light Theme
+Soft Ivory neutral surfaces paired with high-contrast Deep Graphite and Dark Antique Gold:
 
-## Cost and naming status
+| Token | CSS Variable | Hex | Role | Contrast Ratio |
+|---|---|---|---|---|
+| Soft Ivory | `--background` | `#F7F5F0` | Warm page canvas | Baseline |
+| Clean White | `--surface` | `#FFFFFF` | Panels, cards, input surfaces | — |
+| Raised Ivory | `--raised` | `#EFECE3` | Metric cards, table headers | — |
+| Subtle Border | `--border` | `#D5D0C3` | Structural card and table borders | — |
+| Control Border | `--control-border` | `#B8B2A2` | Controls, selects, inputs | — |
+| Champagne Gold | `--brand-accent` | `#C29B48` | Section borders, decorative indicators | — |
+| Deep Graphite | `--ink` | `#10141C` | Primary text, titles, headings | **16.5:1** vs `#F7F5F0` (AAA) |
+| Slate Grey | `--muted` | `#565E6D` | Secondary text, captions, table metadata | **5.7:1** vs `#FFFFFF` (AA) |
+| Dark Antique Gold | `--focus` / `--accent-text` | `#85631A` | Text links, focus rings, interactive text | **5.6:1** vs `#FFFFFF` (AA) |
+| Primary Button | `button.primary` | `#C29B48` / `#10141C` | Gold button with Deep Graphite text | **7.1:1** (AAA) |
+| Champagne Cream | `--selection` | `#F5EEDC` | Selected table cells, conversation question | — |
+| Deep Crimson | `--error` | `#A32A1C` | Accessible light-mode error notices | **5.9:1** vs `#FFFFFF` (AA) |
 
-The SVG artwork is original and hand-authored. Brand assets are served locally with the app and require no paid assets, dependencies, external services, or domain purchases. Trademark clearance and registration remain legally unverified. Name availability and trademark review remain open before public use. [Historical Askora identity](BRAND_GUIDELINES.md)
+---
+
+## Typography and Language
+
+- **System Font Stacks**:
+  - Latin (`en`): `Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif`
+  - Arabic (`ar`): `"IBM Plex Sans Arabic", system-ui, sans-serif`
+  - Zero external web font requests, zero Google Fonts telemetry.
+- **Wordmark Tracking**:
+  - Uppercase `STATOMERA` with letter-spacing `0.085em` in the UI header and `0.18em–0.22em` in standalone logos.
+- **Bidirectional Isolation**:
+  - The Latin brand name `STATOMERA` is wrapped in `<bdi class="wordmark" lang="en" dir="ltr">{productName}</bdi>` to prevent bidirectional reordering in Arabic RTL layouts.
+  - Arabic descriptor is translated as **ذكاء البيانات الإحصائية**.
+  - Operational feedback email `uktbli.eg@gmail.com` is isolated in `<bdi dir="ltr">`.
+
+---
+
+## Logo Usage Rules
+
+1. **Clear Space**: Maintain a minimum clear space around the logo equal to 25% of the mark's height.
+2. **Contrast & Legibility**:
+   - In dark environments, display the symbol on Electric Graphite or Deep Graphite surfaces with Warm White typography.
+   - In light environments, display the symbol with Deep Antique Gold accents and Deep Graphite typography.
+3. **Restraint**: Champagne Gold is a premium signifier for primary actions, focus outlines, and key analytical highlights. It must not be applied indiscriminately to every surface or chart element.
+4. **No Raster Compromises**: Shipped assets are pure scalable vectors (SVG). No raster bitmaps, glow effects, or faux-metallic bevels are used in production.

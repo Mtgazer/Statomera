@@ -39,4 +39,4 @@ Optional PWA work and public beta exposure remain pending explicit approval.
 
 ## STATOMERA identity
 
-**Rebranding complete.** STATOMERA passed independent Antigravity QA at implementation commit `97f094a`. Phase 8 release preparation was approved separately. Hosted preview and public exposure still require explicit founder approval. Availability and trademark verification remain open. [Brand identity](BRAND_IDENTITY.md) · [Rebranding closure](REBRANDING_CLOSURE.md)
+**Visual identity implemented.** STATOMERA visual branding transitioned from the preliminary navy/teal direction to the founder-approved Electric Graphite + Champagne Gold identity. Hosted preview and public exposure still require explicit founder approval. Availability and trademark verification remain open. [Brand identity](BRAND_IDENTITY.md) · [Rebranding closure](REBRANDING_CLOSURE.md)
