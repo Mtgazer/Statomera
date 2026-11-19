@@ -5,7 +5,7 @@ Release preparation began on `feature/phase-6c-local-ai-experiment` at clean che
 ## Release changes
 
 - Added bilingual disclosure that files stay in the tab and the host receives ordinary app asset request data, such as the IP address. The release links to its [third-party notices](../public/third-party-notices.txt) in both layouts. Worker, storage, and evidence contracts were unchanged.
-- Searched the founder record, README, documentation, and app sources. They contain no founder-approved feedback email or retention period. The candidate has no feedback link. The runbook specifies an editable, user-initiated email draft with no dataset, filename, question, result, or diagnostics after those inputs are approved.
+- The original packaged candidate omitted feedback while founder approval was pending. The feedback gate update below records the current source and packaging status.
 - Added local portable packaging with an explicit release-file check, dashboard upload limits, and deterministic ZIP entry ordering and metadata. Retained the archive, archive SHA-256, per-file SHA-256, and provenance beside the repository for local recovery. [Runbook](RELEASE_RUNBOOK.md)
 - Updated the roadmap, architecture, security and testing guidance, and the external founder record. No hosted preview or deployment was created.
 
@@ -41,6 +41,16 @@ The retained `statomera-portable.zip` is 922,050 bytes. Its SHA-256 is `5fdbbb2d
 
 ## Antigravity handoff and outstanding conditions
 
-- Confirm the exact recovered release artifact, notices, disclosure, and CSP. Spot-check the canonical salary and report values, cancellation and recovery, and same-origin traffic with no user payload or stored data. Verify the approved feedback flow when the founder supplies a recipient and retention period.
+- Confirm the exact recovered release artifact, notices, disclosure, and CSP. Spot-check the canonical salary and report values, cancellation and recovery, and same-origin traffic with no user payload or stored data. Verify the approved feedback link and disclosure from the rebuilt candidate.
 - Run the keyboard, spoken status, and report walkthroughs on the documented device matrix. Run repeated near-limit imports on lower-memory physical hardware. Local Playwright WebKit passed the selected checks. Physical mobile devices, Apple Safari, native screen-reader audio, and peak memory remain unverified. [Device scenarios](TESTING.md#phase-8-release-checks)
-- Confirm host and operator, name availability and trademark status, the approved feedback inputs, and explicit preview or public exposure approval. Check hosted anonymity, headers, caching, and recovery only after such approval. Phase 8 remains open for independent QA.
+- Confirm host and operator, name availability and trademark status, operational inbox retention, and explicit preview or public exposure approval. Check hosted anonymity, headers, caching, and recovery only after such approval. Phase 8 remains open for independent QA.
+
+## Feedback gate update
+
+The founder approved `uktbli.eg@gmail.com` and inbox retention of 12 months from receipt. Both locales disclose the recipient and retention before the user opens the editable draft. The `mailto:` URL contains only the approved recipient and `STATOMERA Feedback` subject. The draft body is blank. Sending is a separate user action in the mail client. The inbox operator applies retention with no application-side deletion or storage. The link remains identical after importing and analyzing a dataset.
+
+At source checkpoint `31a2093a6a5b4b40c800f2ef5db8630b35c066e7` plus this feedback change, `npm run typecheck` and `npm run build:portable` passed. The 63 individual unit tests and all six focused portable release browser checks passed with zero failures and skips. Chromium and Firefox each passed the bilingual notice, feedback, and worker privacy checks. Tests intercepted the keyboard-activated link before launching a mail client. No email was sent. The package manifest, lockfile, and CSP were unchanged.
+
+The retained ZIP remains byte-identical to the original pre-feedback archive, as confirmed by its existing SHA-256. The feedback-enabled release must be rebuilt, packaged separately, and reverified before release. Phase 8 remains open. [Release runbook](RELEASE_RUNBOOK.md)
+
+Changed files include `src/app.tsx`, `src/locale.ts`, `tests/browser/release.spec.ts`, `docs/PHASE_8_IMPLEMENTATION.md`, `docs/RELEASE_RUNBOOK.md`, `docs/SECURITY.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/TESTING.md`, and the external `askora_project.md`.

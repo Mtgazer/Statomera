@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test'
 
+const feedbackHref = 'mailto:uktbli.eg@gmail.com?subject=STATOMERA%20Feedback'
+
 test('release disclosures and third-party notices are available in both layouts', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 })
   await page.goto('/')
@@ -18,8 +20,33 @@ test('release disclosures and third-party notices are available in both layouts'
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
   await expect(page.getByText(/يتلقّى مضيف الموقع معلومات الطلب المعتادة/)).toBeVisible()
   await expect(page.getByRole('link', { name: 'إشعارات الجهات الخارجية' })).toHaveAttribute('href', './third-party-notices.txt')
-  await expect(page.locator('a[href^="mailto:"]')).toHaveCount(0)
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
+})
+
+test('feedback discloses its recipient and retention before opening a blank draft', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 800 })
+  await page.goto('/')
+  const link = page.getByRole('link', { name: 'Open feedback email' })
+  await expect(page.locator('html')).toHaveAttribute('dir', 'ltr')
+  await expect(link).toHaveAttribute('href', feedbackHref)
+  await expect(link).toHaveAccessibleDescription(/uktbli\.eg@gmail\.com.*12 months from receipt.*empty body.*choose whether to send/)
+
+  await page.getByLabel('Language').selectOption('ar')
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
+  const arabic = page.getByRole('link', { name: 'افتح رسالة ملاحظات' })
+  await expect(arabic).toHaveAttribute('href', feedbackHref)
+  await expect(arabic).toHaveAccessibleDescription(/uktbli\.eg@gmail\.com.*١٢ شهرًا من تاريخ استلامها.*بنص فارغ/)
+  await expect(page.locator('#feedback-privacy bdi')).toHaveAttribute('dir', 'ltr')
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320)
+
+  // Keep the test inside the browser and inspect the link activated by the keyboard.
+  await arabic.evaluate(element => element.addEventListener('click', event => {
+    event.preventDefault()
+    element.setAttribute('data-intercepted-draft', element.getAttribute('href') ?? '')
+  }, { once: true }))
+  await arabic.press('Enter')
+  await expect(arabic).toBeFocused()
+  await expect(arabic).toHaveAttribute('data-intercepted-draft', feedbackHref)
 })
 
 test('portable app and worker apply static CSP and keep dataset activity local', async ({ page, context }) => {
@@ -46,6 +73,7 @@ test('portable app and worker apply static CSP and keep dataset activity local',
   await ask.fill('How many rows?')
   await ask.press('Enter')
   await expect(page.locator('#conversation')).toContainText('Count1')
+  await expect(page.getByRole('link', { name: 'Open feedback email' })).toHaveAttribute('href', feedbackHref)
   const origin = new URL(page.url()).origin
   const network = requests.filter(({ url }) => /^https?:/.test(url))
   expect(network.length).toBeGreaterThan(0)

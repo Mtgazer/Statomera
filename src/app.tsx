@@ -18,6 +18,8 @@ type Status =
   | { phase: 'error'; error: AnalysisErrorCode }
 
 const worksheetId = 'import-worksheet'
+const feedbackRecipient = 'uktbli.eg@gmail.com'
+const feedbackHref = `mailto:${feedbackRecipient}?subject=${encodeURIComponent('STATOMERA Feedback')}`
 const retryableErrors = new Set<AnalysisErrorCode>(['cancelled', 'read', 'engine', 'timeout'])
 const importOptionErrors = new Set<AnalysisErrorCode>(['headers', 'delimiter', 'options'])
 
@@ -231,6 +233,10 @@ export function App({ session }: { session: DatasetSession<AnalysisResult> }) {
             </select>
           </label>}
           <p className="muted">{t.privacy} {t.hostingPrivacy}</p>
+          <p id="feedback-privacy" className="muted">
+            {t.feedbackRecipient} <bdi dir="ltr">{feedbackRecipient}</bdi>. {t.feedbackPrivacy}
+          </p>
+          <p><a href={feedbackHref} aria-describedby="feedback-privacy">{t.feedbackLink}</a></p>
           <a className="muted" href={`${import.meta.env.BASE_URL}third-party-notices.txt`}>{t.thirdPartyNotices}</a>
         </div>
       </section>
