@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 250" width="700" height="250" role="img" aria-labelledby="title desc">
+  <title id="title">STATOMERA Symbol</title>
+  <desc id="desc">The standalone STATOMERA symbol mark featuring the Champagne Gold arched curve and three inner statistical elements.</desc>
+  <defs>
+    <!-- Arch Gold Gradient -->
+    <linearGradient id="archGold" x1="0%" y1="100%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#D4A860" stop-opacity="0.9"/>
+      <stop offset="15%" stop-color="#E8C27E"/>
+      <stop offset="30%" stop-color="#BD8A48"/>
+      <stop offset="47%" stop-color="#FCE3B0"/>
+      <stop offset="50%" stop-color="#FDF2D9"/>
+      <stop offset="53%" stop-color="#E3B970"/>
+      <stop offset="65%" stop-color="#A87333"/>
+      <stop offset="80%" stop-color="#E8C27E"/>
+      <stop offset="100%" stop-color="#D4A860" stop-opacity="0.9"/>
+    </linearGradient>
+
+    <!-- Center Pillar Gradient -->
+    <linearGradient id="centerPillar" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#FFF6E5"/>
+      <stop offset="15%" stop-color="#FDE4B2"/>
+      <stop offset="50%" stop-color="#DDAE60"/>
+      <stop offset="100%" stop-color="#9E6F2D"/>
+    </linearGradient>
+
+    <!-- Silver Pillar Gradient -->
+    <linearGradient id="silverPillar" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#E2E6ED"/>
+      <stop offset="50%" stop-color="#BEC3CC"/>
+      <stop offset="100%" stop-color="#8A919D"/>
+    </linearGradient>
+  </defs>
+
+  <g id="statomera-symbol">
+    <!-- Center Pillar -->
+    <path d="M 350.0 66.0 C 351.5 78.0, 357.0 138.0, 357.0 178.0 C 357.0 213.0, 353.0 233.0, 350.0 240.0 C 347.0 233.0, 343.0 213.0, 343.0 178.0 C 343.0 138.0, 348.5 78.0, 350.0 66.0 Z" fill="url(#centerPillar)"/>
+
+    <!-- Left Pillar -->
+    <rect x="273" y="156" width="12" height="84" rx="6" fill="url(#silverPillar)"/>
+
+    <!-- Right Pillar -->
+    <rect x="415" y="156" width="12" height="84" rx="6" fill="url(#silverPillar)"/>
+
+    <!-- Main Arch Curve -->
+    <path d="M 2.0 246.0 C 59.0 246.0, 122.0 240.0, 172.0 186.0 C 219.0 134.0, 269.0 38.0, 350.0 4.0 C 431.0 38.0, 481.0 134.0, 528.0 186.0 C 578.0 240.0, 641.0 246.0, 698.0 246.0 C 639.0 245.0, 572.0 230.0, 522.0 178.0 C 470.0 122.0, 429.0 50.0, 370.0 18.0 C 360.0 16.0, 350.0 16.0, 350.0 16.0 C 350.0 16.0, 340.0 16.0, 330.0 18.0 C 271.0 50.0, 230.0 122.0, 178.0 178.0 C 128.0 230.0, 61.0 245.0, 2.0 246.0 Z" fill="url(#archGold)"/>
+
+    <!-- Crest Fold Sculpt / Highlight -->
+    <path d="M 312.0 30.0 C 330.0 14.0, 342.0 4.0, 350.0 4.0 C 360.0 4.0, 374.0 14.0, 392.0 34.0 C 378.0 22.0, 366.0 15.0, 356.0 15.0 C 350.0 15.0, 346.0 16.0, 340.0 20.0 C 330.0 26.0, 322.0 34.0, 312.0 30.0 Z" fill="#FFE9C2" opacity="0.9"/>
+  </g>
+</svg>

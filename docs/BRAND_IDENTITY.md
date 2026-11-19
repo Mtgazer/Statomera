@@ -21,11 +21,13 @@ The descriptor is **Statistical Data Intelligence**. The identity communicates s
 
 ### Symbol Geometry
 The symbol contains:
-- A symmetrical, elegant normal distribution curve (Gaussian bell curve) rendered as a tapering Champagne Gold ribbon.
-- A delicate upper crest highlight curve in Soft Gold reflecting architectural lighting.
-- Three vertical statistical pillars resting on the baseline under the arch:
-  - **Center pillar**: Tapered needle profile in Champagne Gold (`#D6B36A` / `#E4C98F`), representing the central tendency (mean / median).
-  - **Left and right pillars**: Symmetrical vertical pillars in Silver Grey (`#AEB4BF`), positioned at the ±1 standard deviation inflection lines.
+- A smooth, elegant **gold arched curve** above the wordmark with a wide, flowing, premium sculpted shape.
+- An upper crest fold sculpt in Soft Gold reflecting architectural lighting.
+- Three vertical elements centered and balanced inside the arch:
+  - **Center element**: Tall tapered spindle in Champagne Gold (`#D6A95C` / `#FFF6E5`), rising toward the crest.
+  - **Left and right elements**: Shorter rounded capsules in Silver Grey (`#BEC3CC` / `#E2E6ED`).
+- **Wordmark**: Bold, clean, premium uppercase **STATOMERA** in Soft Ivory (`#FAF6EE`).
+- **Descriptor**: **Statistical Data Intelligence** in Silver Grey (`#A8B0B9`), centered beneath the wordmark and flanked by thin decorative gold horizontal lines (`#D6A95C`).
 
 ---
 

@@ -1,89 +1,96 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 360" role="img" aria-labelledby="title description">
-  <title id="title">STATOMERA Dark Logo</title>
-  <desc id="description">The official STATOMERA dark logo with Champagne Gold distribution curve and Electric Graphite palette.</desc>
-  <rect width="600" height="360" fill="#10141C"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1672 941" width="1672" height="941" role="img" aria-labelledby="title desc">
+  <title id="title">STATOMERA</title>
+  <desc id="desc">The authoritative STATOMERA brand identity logo featuring the Champagne Gold arched curve, three inner statistical elements, STATOMERA uppercase wordmark, and Statistical Data Intelligence descriptor.</desc>
+  <rect width="1672" height="941" fill="#0D1119"/>
   <defs>
-    <linearGradient id="goldRibbonDark" x1="0%" y1="100%" x2="0%" y2="0%">
-      <stop offset="0%" stop-color="#C29D53"/>
-      <stop offset="45%" stop-color="#D6B36A"/>
-      <stop offset="100%" stop-color="#ECD49F"/>
+    <!-- Arch Gold Gradient -->
+    <linearGradient id="archGold" x1="0%" y1="100%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#D4A860" stop-opacity="0.9"/>
+      <stop offset="15%" stop-color="#E8C27E"/>
+      <stop offset="30%" stop-color="#BD8A48"/>
+      <stop offset="47%" stop-color="#FCE3B0"/>
+      <stop offset="50%" stop-color="#FDF2D9"/>
+      <stop offset="53%" stop-color="#E3B970"/>
+      <stop offset="65%" stop-color="#A87333"/>
+      <stop offset="80%" stop-color="#E8C27E"/>
+      <stop offset="100%" stop-color="#D4A860" stop-opacity="0.9"/>
     </linearGradient>
-    <linearGradient id="crestHighlightDark" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FFF5DC"/>
-      <stop offset="100%" stop-color="#D6B36A" stop-opacity="0.2"/>
+
+    <!-- Center Pillar Gradient -->
+    <linearGradient id="centerPillar" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#FFF6E5"/>
+      <stop offset="15%" stop-color="#FDE4B2"/>
+      <stop offset="50%" stop-color="#DDAE60"/>
+      <stop offset="100%" stop-color="#9E6F2D"/>
     </linearGradient>
-    <linearGradient id="centerPillarDark" x1="0%" y1="100%" x2="0%" y2="0%">
-      <stop offset="0%" stop-color="#B89345"/>
-      <stop offset="50%" stop-color="#E5C78B"/>
-      <stop offset="100%" stop-color="#FFF7E6"/>
+
+    <!-- Silver Pillar Gradient -->
+    <linearGradient id="silverPillar" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#E2E6ED"/>
+      <stop offset="50%" stop-color="#BEC3CC"/>
+      <stop offset="100%" stop-color="#8A919D"/>
     </linearGradient>
-    <linearGradient id="silverPillarDark" x1="0%" y1="100%" x2="0%" y2="0%">
-      <stop offset="0%" stop-color="#7B8491"/>
-      <stop offset="60%" stop-color="#B6BDC9"/>
-      <stop offset="100%" stop-color="#E2E6ED"/>
+
+    <!-- Flanking Line Gradients -->
+    <linearGradient id="lineLeft" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#D6A95C" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#FCE0A6"/>
+      <stop offset="100%" stop-color="#D6A95C" stop-opacity="0.6"/>
     </linearGradient>
-    <linearGradient id="accentRuleDark" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#D6B36A" stop-opacity="0.1"/>
-      <stop offset="50%" stop-color="#D6B36A"/>
-      <stop offset="100%" stop-color="#D6B36A" stop-opacity="0.1"/>
+    <linearGradient id="lineRight" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#D6A95C" stop-opacity="0.6"/>
+      <stop offset="50%" stop-color="#FCE0A6"/>
+      <stop offset="100%" stop-color="#D6A95C" stop-opacity="0"/>
     </linearGradient>
   </defs>
 
-  <g transform="translate(150, 24)">
-    <!-- Main Distribution Curve Ribbon -->
-    <path d="M 24 116
-             C 65 116, 95 109, 118 78
-             C 133 57, 142 22, 150 22
-             C 158 22, 167 57, 182 78
-             C 205 109, 235 116, 276 116
-             C 242 115, 218 105, 196 80
-             C 180 61, 168 35, 150 35
-             C 132 35, 120 61, 104 80
-             C 82 105, 58 115, 24 116 Z"
-          fill="url(#goldRibbonDark)"/>
-    <!-- Upper Crest Ribbon Highlight -->
-    <path d="M 124 70
-             C 136 53, 143 22, 150 22
-             C 157 22, 164 53, 176 70
-             C 169 57, 160 30, 150 30
-             C 140 30, 131 57, 124 70 Z"
-          fill="url(#crestHighlightDark)"/>
-    <!-- Center Pillar -->
-    <path d="M 150 48
-             C 152.8 54, 152.8 106, 150 112
-             C 147.2 106, 147.2 54, 150 48 Z"
-          fill="url(#centerPillarDark)"/>
-    <!-- Left Pillar -->
-    <path d="M 124 68
-             C 126.4 72, 126.4 107, 124 112
-             C 121.6 107, 121.6 72, 124 68 Z"
-          fill="url(#silverPillarDark)"/>
-    <!-- Right Pillar -->
-    <path d="M 176 68
-             C 178.4 72, 178.4 107, 176 112
-             C 173.6 107, 173.6 72, 176 68 Z"
-          fill="url(#silverPillarDark)"/>
+  <g id="statomera-logo">
+    <!-- Inner Pillars -->
+    <!-- Center Pillar (Tapered Spindle) -->
+    <path d="M 836 248
+             C 837.5 260, 843 320, 843 360
+             C 843 395, 839 415, 836 422
+             C 833 415, 829 395, 829 360
+             C 829 320, 834.5 260, 836 248 Z"
+          fill="url(#centerPillar)"/>
+
+    <!-- Left Pillar (Rounded Capsule) -->
+    <rect x="759" y="338" width="12" height="84" rx="6" fill="url(#silverPillar)"/>
+
+    <!-- Right Pillar (Rounded Capsule) -->
+    <rect x="901" y="338" width="12" height="84" rx="6" fill="url(#silverPillar)"/>
+
+    <!-- Main Arch Curve -->
+    <path d="M 488 428
+             C 545 428, 608 422, 658 368
+             C 705 316, 755 220, 836 186
+             C 917 220, 967 316, 1014 368
+             C 1064 422, 1127 428, 1184 428
+             C 1125 427, 1058 412, 1008 360
+             C 956 304, 915 232, 856 200
+             C 846 198, 836 198, 836 198
+             C 836 198, 826 198, 816 200
+             C 757 232, 716 304, 664 360
+             C 614 412, 547 427, 488 428 Z"
+          fill="url(#archGold)"/>
+
+    <!-- Crest Fold Sculpt / Highlight -->
+    <path d="M 798 212
+             C 816 196, 828 186, 836 186
+             C 846 186, 860 196, 878 216
+             C 864 204, 852 197, 842 197
+             C 836 197, 832 198, 826 202
+             C 816 208, 808 216, 798 212 Z"
+          fill="#FFE9C2" opacity="0.9"/>
+
+    <!-- STATOMERA Wordmark -->
+    <path d="M 339 484 L 349 484 L 350 485 L 360 486 L 366 488 L 380 496 L 380 498 L 372 512 L 367 508 L 352 502 L 335 502 L 330 504 L 325 510 L 326 515 L 333 520 L 358 525 L 371 530 L 380 538 L 383 544 L 384 555 L 382 562 L 379 567 L 370 575 L 357 580 L 352 580 L 351 581 L 334 581 L 320 578 L 309 573 L 300 566 L 309 551 L 317 557 L 325 561 L 337 564 L 353 563 L 359 560 L 362 556 L 362 551 L 359 547 L 353 544 L 321 537 L 313 533 L 307 527 L 304 521 L 303 510 L 305 503 L 308 498 L 314 492 L 321 488 L 339 484 Z M 780 484 L 797 485 L 816 492 L 822 496 L 831 505 L 837 516 L 839 523 L 839 542 L 837 549 L 831 560 L 818 572 L 808 577 L 793 581 L 770 580 L 760 577 L 749 571 L 739 562 L 735 556 L 731 547 L 729 537 L 731 519 L 735 510 L 740 503 L 747 496 L 759 489 L 772 485 L 779 485 L 780 484 Z M 407 486 L 496 486 L 496 503 L 464 503 L 463 504 L 463 576 L 462 579 L 441 579 L 440 574 L 441 571 L 440 504 L 439 503 L 407 503 L 407 486 Z M 547 486 L 570 486 L 613 579 L 591 579 L 587 572 L 583 561 L 580 558 L 535 558 L 533 560 L 524 579 L 503 579 L 523 537 L 523 535 L 533 516 L 539 501 L 547 486 Z M 621 486 L 710 486 L 710 503 L 677 503 L 676 504 L 676 579 L 655 579 L 655 504 L 654 503 L 621 503 L 621 486 Z M 875 486 L 899 486 L 900 489 L 933 538 L 969 486 L 992 486 L 992 526 L 993 527 L 992 528 L 993 530 L 992 531 L 992 579 L 971 579 L 971 520 L 970 519 L 955 539 L 938 565 L 937 566 L 929 566 L 896 518 L 895 519 L 895 579 L 875 579 L 874 578 L 875 577 L 875 564 L 874 563 L 874 487 L 875 486 Z M 1035 486 L 1110 486 L 1110 503 L 1057 503 L 1056 504 L 1056 522 L 1058 524 L 1102 524 L 1103 525 L 1102 528 L 1103 530 L 1103 539 L 1102 540 L 1058 540 L 1056 542 L 1056 561 L 1057 562 L 1111 562 L 1111 579 L 1035 579 L 1035 509 L 1034 508 L 1035 507 L 1035 486 Z M 1149 486 L 1203 486 L 1204 487 L 1209 487 L 1223 493 L 1230 500 L 1234 510 L 1234 522 L 1232 528 L 1226 536 L 1222 539 L 1214 542 L 1213 544 L 1240 579 L 1215 579 L 1190 546 L 1172 546 L 1171 547 L 1171 579 L 1149 579 L 1149 486 Z M 1306 486 L 1329 486 L 1372 579 L 1349 579 L 1343 564 L 1339 558 L 1294 558 L 1292 560 L 1284 579 L 1262 579 L 1270 564 L 1270 562 L 1306 486 Z M 1171 505 L 1171 528 L 1172 529 L 1201 529 L 1206 527 L 1212 520 L 1212 512 L 1204 504 L 1201 503 L 1172 503 L 1171 505 Z M 553 516 L 542 539 L 542 541 L 543 542 L 573 542 L 574 541 L 559 508 L 558 507 L 556 509 L 553 516 Z M 1312 517 L 1301 541 L 1302 542 L 1332 542 L 1333 541 L 1318 508 L 1317 507 L 1316 508 L 1312 517 Z M 754 522 L 752 528 L 752 538 L 754 545 L 762 556 L 773 562 L 777 563 L 796 562 L 804 558 L 812 550 L 816 543 L 817 539 L 816 522 L 813 516 L 805 508 L 798 504 L 791 502 L 778 502 L 771 504 L 765 507 L 757 515 L 754 522 Z" fill="#FAF6EE" fill-rule="evenodd"/>
+
+    <!-- Flanking Decorative Lines -->
+    <path d="M 364 639 L 409 639 L 411 641 L 411 643 L 410 644 L 348 644 L 347 643 L 325 643 L 324 642 L 318 642 L 321 642 L 322 641 L 335 641 L 336 640 L 363 640 L 364 639 Z" fill="url(#lineLeft)"/>
+    <path d="M 1263 639 L 1334 640 L 1335 641 L 1350 641 L 1351 642 L 1353 642 L 1347 642 L 1346 643 L 1322 643 L 1321 644 L 1262 644 L 1261 643 L 1261 641 L 1263 639 Z" fill="url(#lineRight)"/>
+
+    <!-- Statistical Data Intelligence Descriptor -->
+    <path d="M 567 616 L 570 617 L 571 619 L 569 622 L 566 622 L 565 621 L 565 617 L 567 616 Z M 637 616 L 640 618 L 640 621 L 639 622 L 635 622 L 634 620 L 635 617 L 637 616 Z M 718 616 L 719 617 L 721 617 L 721 636 L 722 637 L 722 647 L 721 648 L 721 652 L 722 653 L 721 654 L 718 654 L 717 653 L 717 617 L 718 616 Z M 1013 616 L 1017 616 L 1017 654 L 1013 654 L 1013 616 Z M 1031 616 L 1034 616 L 1035 617 L 1035 653 L 1034 654 L 1031 654 L 1030 653 L 1030 617 L 1031 616 Z M 1049 616 L 1051 616 L 1053 618 L 1053 621 L 1052 622 L 1048 622 L 1047 621 L 1047 618 L 1049 616 Z M 456 618 L 466 618 L 467 619 L 469 619 L 473 622 L 471 625 L 465 622 L 458 622 L 453 626 L 453 629 L 456 632 L 468 635 L 473 639 L 473 641 L 474 642 L 473 649 L 470 652 L 465 654 L 456 654 L 451 652 L 447 649 L 449 646 L 451 646 L 457 650 L 465 650 L 469 646 L 469 643 L 465 639 L 456 637 L 452 635 L 449 632 L 449 624 L 452 620 L 456 618 Z M 752 618 L 767 618 L 768 619 L 771 619 L 772 620 L 774 620 L 780 626 L 782 631 L 782 640 L 779 647 L 775 651 L 770 653 L 759 653 L 758 654 L 752 654 L 752 618 Z M 901 618 L 905 618 L 906 619 L 906 625 L 905 626 L 905 634 L 906 635 L 906 647 L 905 648 L 905 652 L 906 653 L 905 654 L 901 654 L 901 618 Z M 490 620 L 491 621 L 491 627 L 492 628 L 498 628 L 498 631 L 492 631 L 490 633 L 491 634 L 491 648 L 493 650 L 498 650 L 499 653 L 497 654 L 491 654 L 487 651 L 486 649 L 486 632 L 485 631 L 482 631 L 482 628 L 485 628 L 486 627 L 486 621 L 489 621 L 490 620 Z M 616 620 L 617 620 L 617 626 L 619 628 L 625 628 L 625 631 L 619 631 L 617 633 L 617 647 L 620 650 L 625 650 L 625 653 L 624 654 L 618 654 L 613 650 L 613 633 L 611 631 L 608 631 L 608 628 L 612 628 L 613 627 L 613 621 L 615 621 L 616 620 Z M 831 620 L 832 621 L 832 627 L 833 628 L 839 628 L 839 631 L 833 631 L 832 632 L 832 648 L 834 650 L 839 650 L 840 651 L 840 653 L 838 654 L 832 654 L 828 651 L 828 649 L 827 648 L 827 633 L 823 631 L 823 628 L 826 628 L 827 627 L 827 621 L 830 621 L 831 620 Z M 960 620 L 961 620 L 961 627 L 962 628 L 969 628 L 969 631 L 963 631 L 961 633 L 961 647 L 963 650 L 969 650 L 969 653 L 967 654 L 962 654 L 958 652 L 956 647 L 956 633 L 954 631 L 952 631 L 952 628 L 955 628 L 957 626 L 957 623 L 956 622 L 960 620 Z M 543 621 L 547 621 L 547 626 L 549 628 L 555 628 L 555 631 L 549 631 L 547 633 L 547 647 L 550 650 L 555 650 L 555 653 L 553 654 L 548 654 L 546 653 L 543 649 L 543 633 L 540 631 L 538 631 L 538 628 L 541 628 L 543 626 L 543 621 Z M 756 625 L 756 648 L 758 650 L 764 650 L 765 649 L 769 649 L 771 648 L 776 643 L 776 641 L 777 640 L 777 632 L 775 627 L 769 623 L 764 623 L 763 622 L 758 622 L 756 625 Z M 515 627 L 521 627 L 522 628 L 524 628 L 528 632 L 529 634 L 529 650 L 530 651 L 530 653 L 529 654 L 528 653 L 527 654 L 525 653 L 524 651 L 519 654 L 513 654 L 512 653 L 510 653 L 507 650 L 507 643 L 510 640 L 515 639 L 516 638 L 522 638 L 523 639 L 524 638 L 524 634 L 520 631 L 515 631 L 510 634 L 509 633 L 508 630 L 515 627 Z M 588 627 L 593 627 L 594 628 L 597 628 L 600 630 L 598 633 L 594 631 L 588 631 L 585 634 L 588 638 L 595 639 L 599 641 L 601 644 L 601 649 L 597 653 L 595 653 L 594 654 L 587 654 L 582 652 L 580 650 L 582 648 L 584 648 L 587 650 L 594 650 L 597 647 L 595 644 L 585 641 L 582 639 L 581 637 L 581 633 L 582 631 L 585 628 L 587 628 L 588 627 Z M 661 627 L 666 627 L 667 628 L 669 628 L 674 632 L 672 634 L 670 634 L 666 631 L 662 631 L 656 636 L 656 638 L 655 639 L 655 643 L 659 649 L 661 650 L 667 650 L 671 647 L 674 649 L 673 651 L 667 654 L 660 654 L 656 652 L 652 648 L 651 643 L 650 642 L 650 639 L 651 638 L 652 633 L 656 629 L 661 627 Z M 691 627 L 696 627 L 701 629 L 703 631 L 704 633 L 704 649 L 705 650 L 705 653 L 701 653 L 699 651 L 694 654 L 688 654 L 683 651 L 682 649 L 682 644 L 684 641 L 688 639 L 692 639 L 693 638 L 697 638 L 698 639 L 700 637 L 700 635 L 696 631 L 690 631 L 686 634 L 684 632 L 684 630 L 691 627 Z M 799 627 L 805 627 L 810 629 L 812 631 L 813 633 L 813 649 L 814 650 L 814 654 L 812 654 L 808 651 L 803 654 L 797 654 L 796 653 L 794 653 L 792 651 L 791 649 L 791 644 L 794 640 L 796 639 L 801 639 L 802 638 L 808 638 L 809 637 L 808 634 L 805 631 L 799 631 L 795 634 L 792 631 L 794 629 L 799 627 Z M 857 627 L 862 627 L 867 629 L 870 634 L 870 649 L 871 650 L 871 653 L 870 654 L 868 654 L 865 651 L 860 654 L 854 654 L 850 652 L 848 649 L 848 644 L 851 640 L 853 639 L 857 639 L 858 638 L 865 638 L 866 637 L 865 634 L 862 631 L 856 631 L 851 634 L 849 631 L 851 629 L 853 629 L 857 627 Z M 931 627 L 938 628 L 942 633 L 942 639 L 943 640 L 943 651 L 942 652 L 942 654 L 939 654 L 938 653 L 938 636 L 937 634 L 933 631 L 929 631 L 925 634 L 924 636 L 924 643 L 923 644 L 923 652 L 924 653 L 923 654 L 922 653 L 920 654 L 919 653 L 919 628 L 923 628 L 923 630 L 924 631 L 926 629 L 931 627 Z M 988 627 L 992 627 L 997 629 L 1000 632 L 1002 636 L 1002 642 L 983 642 L 982 643 L 983 647 L 987 650 L 994 650 L 998 647 L 1001 650 L 994 654 L 987 654 L 982 652 L 979 649 L 977 644 L 977 636 L 978 634 L 981 630 L 988 627 Z M 1073 627 L 1078 627 L 1084 631 L 1085 630 L 1085 628 L 1089 628 L 1089 657 L 1088 659 L 1082 659 L 1085 655 L 1085 651 L 1084 650 L 1079 653 L 1072 653 L 1068 651 L 1064 646 L 1064 635 L 1070 628 L 1072 628 L 1073 627 Z M 1110 627 L 1115 627 L 1120 629 L 1124 635 L 1124 642 L 1105 642 L 1104 643 L 1105 644 L 1105 646 L 1110 650 L 1117 650 L 1121 648 L 1123 651 L 1117 654 L 1109 654 L 1105 652 L 1100 646 L 1100 642 L 1099 640 L 1100 639 L 1100 635 L 1101 633 L 1105 629 L 1110 627 Z M 1147 627 L 1154 628 L 1158 633 L 1158 653 L 1156 653 L 1155 654 L 1154 653 L 1154 636 L 1153 634 L 1149 631 L 1145 631 L 1140 635 L 1140 637 L 1139 638 L 1139 640 L 1140 641 L 1139 654 L 1138 653 L 1136 654 L 1135 653 L 1135 628 L 1139 628 L 1139 629 L 1141 630 L 1147 627 Z M 1180 627 L 1184 627 L 1192 631 L 1190 634 L 1188 634 L 1184 631 L 1180 631 L 1174 636 L 1173 642 L 1175 647 L 1177 649 L 1179 650 L 1185 650 L 1189 647 L 1192 649 L 1191 651 L 1185 654 L 1179 654 L 1174 652 L 1171 649 L 1169 645 L 1169 637 L 1170 636 L 1170 634 L 1173 630 L 1180 627 Z M 1211 627 L 1216 627 L 1217 628 L 1219 628 L 1223 631 L 1225 635 L 1225 642 L 1206 642 L 1205 643 L 1206 646 L 1210 650 L 1218 650 L 1221 648 L 1223 648 L 1224 650 L 1222 652 L 1217 654 L 1210 654 L 1206 652 L 1202 648 L 1201 643 L 1200 642 L 1202 633 L 1206 629 L 1211 627 Z M 565 628 L 570 628 L 570 653 L 569 654 L 568 653 L 566 654 L 565 653 L 565 628 Z M 635 628 L 640 628 L 639 630 L 639 632 L 640 633 L 640 640 L 639 641 L 639 644 L 640 645 L 640 653 L 639 654 L 635 653 L 635 628 Z M 1048 628 L 1052 628 L 1052 653 L 1048 653 L 1048 628 Z M 1069 636 L 1068 638 L 1068 643 L 1073 649 L 1080 649 L 1084 645 L 1085 638 L 1084 637 L 1084 635 L 1081 632 L 1079 631 L 1074 631 L 1072 632 L 1069 636 Z M 982 637 L 983 639 L 996 639 L 998 637 L 993 631 L 987 631 L 985 632 L 983 634 L 982 637 Z M 1219 638 L 1220 638 L 1221 636 L 1220 634 L 1216 631 L 1210 631 L 1205 637 L 1207 639 L 1218 639 L 1219 638 Z M 1107 639 L 1119 639 L 1120 638 L 1120 636 L 1119 634 L 1115 631 L 1109 631 L 1104 637 L 1107 639 Z M 687 645 L 687 648 L 689 650 L 693 651 L 694 650 L 696 650 L 700 646 L 700 642 L 699 641 L 692 641 L 691 642 L 689 642 L 687 645 Z M 796 645 L 796 648 L 798 650 L 803 651 L 809 646 L 809 642 L 808 641 L 801 641 L 800 642 L 798 642 L 796 645 Z M 511 646 L 511 647 L 515 651 L 518 651 L 519 650 L 521 650 L 524 647 L 524 642 L 523 641 L 517 641 L 516 642 L 514 642 L 511 646 Z M 852 646 L 852 647 L 856 651 L 860 651 L 865 647 L 866 643 L 864 641 L 858 641 L 857 642 L 855 642 L 852 646 Z M 1067 657 L 1070 659 L 1065 659 L 1067 657 Z" fill="#A8B0B9" fill-rule="evenodd"/>
   </g>
-
-  <!-- Wordmark STATOMERA -->
-  <text x="300" y="235"
-        fill="#F3F0E8"
-        font-family="Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
-        font-size="44"
-        font-weight="700"
-        letter-spacing="0.22em"
-        text-anchor="middle">STATOMERA</text>
-
-  <!-- Left Tapered Accent Rule -->
-  <path d="M 110 274 Q 145 272.5 175 274 Q 145 275.5 110 274 Z" fill="url(#accentRuleDark)"/>
-  <!-- Secondary Descriptor -->
-  <text x="300" y="278"
-        fill="#AEB4BF"
-        font-family="Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
-        font-size="14.5"
-        font-weight="450"
-        letter-spacing="0.16em"
-        text-anchor="middle">Statistical Data Intelligence</text>
-  <!-- Right Tapered Accent Rule -->
-  <path d="M 425 274 Q 455 272.5 490 274 Q 455 275.5 425 274 Z" fill="url(#accentRuleDark)"/>
 </svg>
