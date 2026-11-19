@@ -241,6 +241,7 @@ test('analysis works when previously loaded assets are supplied without live req
 })
 
 test('near-limit input returns the reference mean and retires every worker', async ({ page, context, browserName }) => {
+  await page.setViewportSize({ width: 360, height: 800 })
   await page.addInitScript(() => {
     const NativeWorker = window.Worker
     window.Worker = class extends NativeWorker {
