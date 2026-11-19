@@ -1,6 +1,6 @@
 # Architecture
 
-Askora is a static React application with strict TypeScript, Vite and shared CSS tokens. The portable TypeScript build processes bounded CSV, JSON and XLSX locally in browser workers. The DuckDB-Wasm builds remain reference builds. The dataset profile and verified statistical operations supply all analytical evidence. [Phase 1B measurements](PHASE_1B_REPORT.md) · [Phase 2C ingestion contracts](PHASE_2C_REPORT.md)
+STATOMERA is a static React application with strict TypeScript, Vite and shared CSS tokens. The portable TypeScript build processes bounded CSV, JSON and XLSX locally in browser workers. The DuckDB-Wasm builds remain reference builds. The dataset profile and verified statistical operations supply all analytical evidence. [Phase 1B measurements](PHASE_1B_REPORT.md) · [Phase 2C ingestion contracts](PHASE_2C_REPORT.md)
 
 ## Data and execution boundaries
 
@@ -37,13 +37,13 @@ Phase 7B assembles the analytical report in the active dataset workspace. A sele
 
 ## Optional AI research policy
 
-**AI is optional. Core Askora must work without a model.** The deterministic parser remains authoritative for production intent, and verified profiles and statistical engines are the exclusive source of numerical results. The Phase 6C experiment is complete with a production no-go. Local AI integration is deferred. [Phase 6C closure](PHASE_6C_CLOSURE.md)
+**AI is optional. Core STATOMERA must work without a model.** The deterministic parser remains authoritative for production intent, and verified profiles and statistical engines are the exclusive source of numerical results. The Phase 6C experiment is complete with a production no-go. Local AI integration is deferred. [Phase 6C closure](PHASE_6C_CLOSURE.md)
 
 Future experiments require separate approval and stay isolated from production imports, dependencies, builds and data paths until they independently pass the gates below. Evaluate candidates for measurable gains in user efficiency, intent understanding, Standard and Egyptian Arabic, ease of use and overall experience.
 
 - Match or exceed the deterministic baseline on the relevant benchmark and correctly reject unsupported requests.
 - Preserve strict validation of intent, schema, operation eligibility, revision and parameters. Model output can propose an intent only. Numerical evidence continues to come from the verified engines.
-- Demonstrate acceptable latency, memory, download cost and device behavior. Verify privacy compatibility with browser-local processing and Askora's data boundaries.
+- Demonstrate acceptable latency, memory, download cost and device behavior. Verify privacy compatibility with browser-local processing and the application's data boundaries.
 
 ## Candidate comparison
 

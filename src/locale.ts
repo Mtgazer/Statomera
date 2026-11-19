@@ -1,6 +1,7 @@
 import type { AnalysisErrorCode } from './analysis.ts'
 
 export type Locale = 'en' | 'ar'
+export const productName = 'STATOMERA'
 
 const enErrors = {
   fileType: 'Choose a CSV, JSON or XLSX file.',
@@ -55,6 +56,7 @@ const arErrors: typeof enErrors = {
 export const messages = {
   en: {
     language: 'Language', theme: 'Theme', dark: 'Dark', light: 'Light',
+    brandDescriptor: 'Statistical Data Intelligence',
     title: 'Dataset analysis', upload: 'Open a dataset', choose: 'Choose file',
     guidance: 'CSV, JSON or XLSX up to 5 MiB. The first CSV or worksheet record is the header by default.',
     privacy: 'File contents stay in this tab.', bytes: 'bytes',
@@ -123,6 +125,7 @@ export const messages = {
   },
   ar: {
     language: 'اللغة', theme: 'المظهر', dark: 'داكن', light: 'فاتح',
+    brandDescriptor: 'ذكاء البيانات الإحصائية',
     title: 'تحليل مجموعة البيانات', upload: 'افتح مجموعة بيانات', choose: 'اختر ملفًا',
     guidance: 'ملف CSV أو JSON أو XLSX حتى ٥ ميبيبايت. يُستخدم السجل الأول في CSV أو ورقة العمل للعناوين افتراضيًا.',
     privacy: 'يبقى محتوى الملف في علامة التبويب هذه.', bytes: 'بايت',

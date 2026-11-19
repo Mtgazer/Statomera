@@ -192,7 +192,7 @@ test('local-only requests, inert cell rendering, no storage and bounded performa
     // WebKit may surface reads of the selected File as local blob URLs.
     if (url.protocol === 'blob:') continue
     expect(url.protocol).toBe('http:')
-    expect(url.pathname).toMatch(/^(\/$|\/assets\/[^/]+\.(js|css|wasm)$)/)
+    expect(url.pathname).toMatch(/^(?:\/|\/assets\/(?:[^/]+\.(?:js|css|wasm)|statomera-(?:mark|favicon)\.svg))$/)
     expect(url.search).toBe('')
     expect(request.url).not.toContain('LocalOnlyCell')
   }

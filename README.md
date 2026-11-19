@@ -1,12 +1,14 @@
-# Askora
+# STATOMERA
 
-Askora is a bilingual conversational data analysis workspace in development. Users will open a dataset in their browser, inspect its quality and ask questions in English, Arabic or both. Answers will use real analytical computations and show the data and assumptions behind them.
+**Statistical Data Intelligence**
+
+STATOMERA is a bilingual, browser-local workspace for statistical data analysis. Open a dataset, inspect its quality, and ask questions in English, Arabic, or both. Reports and charts trace findings to verified results and their assumptions.
 
 The dataset profiler opens local CSV, flat JSON and supported XLSX files and shows a preview, inferred types, quality counts and numerical or categorical summaries in English and Arabic. The first public beta still targets zero project spend.
 
 ## Run the profiler locally
 
-Use Node.js 22.18 or newer. From the Askora repository root, run:
+Use Node.js 22.18 or newer. From the repository root, run:
 
 ```sh
 npm ci --ignore-scripts
@@ -32,6 +34,7 @@ Open the loopback address printed by Vite and choose `tests/fixtures/salary.csv`
 - [Testing strategy](docs/TESTING.md)
 - [Security principles](docs/SECURITY.md)
 - [Decision log](docs/DECISIONS.md)
-- [Brand guidelines](docs/BRAND_GUIDELINES.md)
+- [STATOMERA brand identity](docs/BRAND_IDENTITY.md)
+- [Rebranding implementation and verification](docs/REBRANDING_IMPLEMENTATION.md)
 
-The original project history and brand reference board were supplied alongside this checkout. Repository visibility and project licensing are open decisions.
+Historical Askora phase records and the original brand reference board remain part of the project history. Repository visibility and project licensing are open decisions.

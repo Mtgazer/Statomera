@@ -1,4 +1,6 @@
-# Brand guidelines
+# Historical Askora brand guidelines
+
+This document preserves the former identity for historical phase reports. The active product identity is documented in [STATOMERA brand identity](BRAND_IDENTITY.md).
 
 **Askora** is the product name. Use lowercase **askora** in the wordmark. The supplied *Askora Electric Graphite Brand Board.png* shows the approved ribbon-like A with a rising line and three connected circular nodes, a rounded lowercase wordmark, a standalone rounded-square icon and a simplified monochrome variant. “AI Data Analyst” appears on the board as a subtitle. Product tagline remains open.
 

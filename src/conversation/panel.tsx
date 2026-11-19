@@ -98,7 +98,7 @@ export function ConversationPanel({ session, revision, locale, onReport, reporte
         {turns.map(({ id, question, reply }) => <li key={id}>
           <p className="conversation-question"><strong>{t.you}</strong><bdi>{question}</bdi></p>
           <div className="conversation-reply" data-state={reply?.status ?? 'pending'}>
-            <span className="conversation-speaker">{t.answer}</span>
+            <bdi className="conversation-speaker" lang="en" dir="ltr">{t.answer}</bdi>
             {reply ? <ConversationAnswer result={reply} locale={locale} /> : <p>{t.working}</p>}
             {(reply?.status === 'completed' || reply?.status === 'unavailable') &&
               <ReportAction locale={locale} added={reply === reported} onAdd={() => onReport(reply)} />}

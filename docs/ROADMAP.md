@@ -36,3 +36,7 @@ Independent QA had 42 of 43 browser tests pass in each of Chromium and Firefox b
 Reporting and Responsive Experience was implemented at `820989d` and passed independent Antigravity QA with zero application defects found. Linux WebKit was blocked by missing OS libraries in independent QA. Physical mobile and native screen-reader testing remain open. PDF and Markdown export and PWA work were outside Phase 7B. [Phase 7B closure](PHASE_7B_CLOSURE.md)
 
 Optional PWA work and Phase 8 public beta work remain pending explicit approval.
+
+## STATOMERA identity
+
+The approved product identity update follows Phase 7B. Independent Antigravity QA is pending. Phase 8 remains pending explicit approval. Availability and trademark verification remain open. [Brand identity](BRAND_IDENTITY.md) · [Rebranding handoff](REBRANDING_IMPLEMENTATION.md)

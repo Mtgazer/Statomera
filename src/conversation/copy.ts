@@ -1,6 +1,7 @@
 import type { Clarification, ColumnRole, UnsupportedReason } from '../intent/contract.ts'
 import type { InferenceReason } from '../inference-contract.ts'
 import type { UndefinedStatistic } from '../statistics-contract.ts'
+import { productName } from '../locale.ts'
 import type { Locale } from '../locale.ts'
 import type { Assumption, ValidationReason } from '../router/contract.ts'
 
@@ -24,7 +25,7 @@ export const conversationCopy = {
     },
     label: 'Question', keys: 'Enter to send · Shift+Enter for a new line', send: 'Send question',
     clear: 'Clear conversation', retry: 'Retry question', cancel: 'Cancel question',
-    transcript: 'Conversation', you: 'You', answer: 'Askora', working: 'Analyzing your question…',
+    transcript: 'Conversation', you: 'You', answer: productName, working: 'Analyzing your question…',
     ready: 'Conversation ready.', answered: 'Answer ready.', cleared: 'Conversation cleared.',
     clarification: 'Clarification needed', unsupported: 'Question unsupported', unavailable: 'Result unavailable',
     failed: 'Analysis failed', cancelled: 'Question cancelled',
@@ -62,7 +63,7 @@ export const conversationCopy = {
       unsupportedOperation: 'This operation is outside the supported analysis scope. Try a question about counts, missing values, or a supported statistic.',
       multipleOperations: 'Ask one question at a time.',
       unsupportedQualifier: 'This qualifier is outside the supported analysis scope.',
-      dataModification: 'Askora answers questions about the dataset and leaves its values intact.',
+      dataModification: `${productName} answers questions about the dataset and leaves its values intact.`,
       causal: 'These analyses cannot establish causation.',
       forecast: 'Forecasting is outside the supported analysis scope.',
     },
@@ -109,7 +110,7 @@ export const conversationCopy = {
     },
     label: 'السؤال', keys: 'Enter للإرسال · Shift+Enter لسطر جديد', send: 'إرسال السؤال',
     clear: 'مسح المحادثة', retry: 'إعادة محاولة السؤال', cancel: 'إلغاء السؤال',
-    transcript: 'المحادثة', you: 'أنت', answer: 'أسكورا', working: 'جارٍ تحليل سؤالك…',
+    transcript: 'المحادثة', you: 'أنت', answer: productName, working: 'جارٍ تحليل سؤالك…',
     ready: 'المحادثة جاهزة.', answered: 'الإجابة جاهزة.', cleared: 'مُسحت المحادثة.',
     clarification: 'يلزم توضيح', unsupported: 'السؤال غير مدعوم', unavailable: 'النتيجة غير متاحة',
     failed: 'تعذّر التحليل', cancelled: 'أُلغي السؤال',
@@ -147,7 +148,7 @@ export const conversationCopy = {
       unsupportedOperation: 'هذه العملية خارج نطاق التحليل المدعوم. جرّب سؤالًا عن الأعداد أو القيم المفقودة أو إحصاء مدعوم.',
       multipleOperations: 'اطرح سؤالًا واحدًا في كل مرة.',
       unsupportedQualifier: 'هذا الشرط خارج نطاق التحليل المدعوم.',
-      dataModification: 'تجيب أسكورا عن أسئلة البيانات وتترك قيمها كما هي.',
+      dataModification: 'يمكنك طرح أسئلة عن مجموعة البيانات مع إبقاء قيمها كما هي.',
       causal: 'هذه التحليلات لا تثبت السببية.',
       forecast: 'التنبؤ خارج نطاق التحليل المدعوم.',
     },

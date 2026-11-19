@@ -1,6 +1,6 @@
 # Project brief
 
-Askora serves people who need to understand data without writing SQL or Python. The expected flow is open a local file, inspect schema and quality findings, ask a supported question, and inspect how the result was computed. If the user asks for profit and only revenue is available, explain that cost data is required. Report relationships with appropriate caveats and treat causal claims as a separate question requiring stronger evidence.
+STATOMERA serves people who need to understand data without writing SQL or Python. The expected flow is open a local file, inspect schema and quality findings, ask a supported question, and inspect how the result was computed. If the user asks for profit and only revenue is available, explain that cost data is required. Report relationships with appropriate caveats and treat causal claims as a separate question requiring stronger evidence.
 
 ## Requirements matrix
 
@@ -22,7 +22,7 @@ Priority describes the recommended delivery order. Confirmed refers to product i
 | Verifiable answers and clarification | Confirmed accuracy requirement, essential | Validated plan, result provenance and renderer | Audit every number to computed output, explain unsupported analyses and ask when column choice is ambiguous |
 | Analysis steps interface, charts and reports | Traceability confirmed, UI and chart/report scope proposed, high | Versioned evidence and chart adapter | Compare chart series and report values to results and offer a readable tabular equivalent |
 | Privacy, security and reliability | Confirmed, release blocker | Trust boundaries and release checks | Verify no dataset transfer in local mode, enforce limits and review dependencies |
-| Dark graphite and Champagne Gold identity | Confirmed, high | Design tokens, approved mark and bilingual layout | Compare reference geometry and color tokens, test contrast, layout and focus states |
+| [Dark navy, teal, and silver identity](BRAND_IDENTITY.md) | Confirmed, high | Design tokens, distribution mark, and bilingual layout | Check logo assets, color contrast, layout, and focus states |
 | Responsive web and real-user feedback | Confirmed validation goal, workflows proposed, high | Device matrix, explicit feedback submission | Complete primary tasks on Android, verify feedback excludes datasets by default |
 | On-device language model and installable PWA | Proposed, gated | Device and language benchmarks, model rights, cache controls | Core works without either, opt-in paths pass separate readiness checks |
 | Native Android, cloud AI/workspaces, accounts, billing and advanced modeling | Future | Evidence, funding and dedicated approval | Define separate gates if approved |

@@ -6,6 +6,7 @@ function securityHeaders(portable: boolean) {
       "default-src 'none'",
       portable ? "script-src 'self'" : "script-src 'self' 'wasm-unsafe-eval'",
       "style-src 'self'",
+      "img-src 'self'",
       "connect-src 'self'",
       "worker-src 'self'",
       "base-uri 'none'",

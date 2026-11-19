@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { AnalysisError, analyzeFile, analyzeInference, analyzeStatistic } from './analysis.ts'
 import type { AnalysisErrorCode, AnalysisResult } from './analysis.ts'
-import { formatNumber, messages } from './locale.ts'
+import { formatNumber, messages, productName } from './locale.ts'
 import type { Locale } from './locale.ts'
 import { commonMissingMarkers, defaultCsvOptions } from './dataset.ts'
 import { ConversationPanel } from './conversation/panel.tsx'
@@ -145,7 +145,13 @@ export function App({ session }: { session: DatasetSession<AnalysisResult> }) {
     <a href="#workspace-main" className="skip-link">{t.skipLink}</a>
     <header className="topbar">
       <div className="topbar-inner">
-        <span className="wordmark" lang="en" dir="ltr">askora</span>
+        <div className="brand-lockup">
+          <img src={`${import.meta.env.BASE_URL}assets/statomera-mark.svg`} width="36" height="36" alt="" />
+          <div className="brand-text">
+            <bdi className="wordmark" lang="en" dir="ltr">{productName}</bdi>
+            <span className="brand-descriptor">{t.brandDescriptor}</span>
+          </div>
+        </div>
         <div className="preferences">
           <label><span>{t.language}</span>
             <select value={locale} onChange={event => setLocale(event.target.value as Locale)}>
