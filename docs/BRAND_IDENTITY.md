@@ -1,6 +1,8 @@
 # STATOMERA brand identity
 
-**STATOMERA** is the internally approved product name. The descriptor is **Statistical Data Intelligence**. The tagline **Understand Data. Trust the Evidence.** is proposed and stays out of the shipped interface. The identity emphasizes quantitative research, verifiable evidence, and private, browser-local data analysis.
+**STATOMERA** is the current product identity. The rebrand passed independent Antigravity QA. [Rebranding closure](REBRANDING_CLOSURE.md)
+
+The descriptor is **Statistical Data Intelligence**. The tagline **Understand Data. Trust the Evidence.** is proposed and stays out of the shipped interface. The identity emphasizes quantitative research, verifiable evidence, and private, browser-local data analysis.
 
 ## Logo assets
 
@@ -32,4 +34,4 @@ The workspace retains the Inter and IBM Plex Sans Arabic system font stacks, wit
 
 ## Cost and naming status
 
-The SVG artwork is original and hand-authored. Brand assets are served locally with the app and require no paid assets, dependencies, external services, or domain purchases. Internal name approval does not establish trademark clearance or registration. Availability and trademark review remain open before any public use. [Historical Askora identity](BRAND_GUIDELINES.md)
+The SVG artwork is original and hand-authored. Brand assets are served locally with the app and require no paid assets, dependencies, external services, or domain purchases. Trademark clearance and registration remain legally unverified. Name availability and trademark review remain open before public use. [Historical Askora identity](BRAND_GUIDELINES.md)
